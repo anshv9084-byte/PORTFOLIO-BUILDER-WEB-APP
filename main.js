@@ -42,6 +42,104 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 const mobileThemeToggleBtn = document.getElementById('mobile-theme-toggle');
 let savedPortfolios = [];
 
+// --- AUTO-SAVE SYSTEM ---
+const AUTO_SAVE_KEY = 'portfolio_builder_draft';
+
+function saveFormDataToLocal() {
+    const formData = {
+        name: document.getElementById('name').value,
+        role: document.getElementById('role').value,
+        tagline: document.getElementById('tagline-input')?.value || '',
+        skills: document.getElementById('skills').value,
+        projects: document.getElementById('projects').value,
+        experience: document.getElementById('experience')?.value || '',
+        github: document.getElementById('github').value,
+        linkedin: document.getElementById('linkedin')?.value || '',
+        email: document.getElementById('email')?.value || '',
+        photoUrl: document.getElementById('photo-url')?.value || '',
+        theme: currentTheme,
+        accentColor: currentAccentColor,
+        font: currentFont
+    };
+    localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(formData));
+    console.log('Draft auto-saved');
+}
+
+function loadFormDataFromLocal() {
+    const savedData = localStorage.getItem(AUTO_SAVE_KEY);
+    if (!savedData) return;
+
+    try {
+        const data = JSON.parse(savedData);
+        if (data.name) document.getElementById('name').value = data.name;
+        if (data.role) document.getElementById('role').value = data.role;
+        if (data.tagline) {
+            const taglineInput = document.getElementById('tagline-input');
+            if (taglineInput) taglineInput.value = data.tagline;
+        }
+        if (data.skills) document.getElementById('skills').value = data.skills;
+        if (data.projects) document.getElementById('projects').value = data.projects;
+        if (data.experience) {
+            const expInput = document.getElementById('experience');
+            if (expInput) expInput.value = data.experience;
+        }
+        if (data.github) document.getElementById('github').value = data.github;
+        if (data.linkedin) {
+            const linkedinInput = document.getElementById('linkedin');
+            if (linkedinInput) linkedinInput.value = data.linkedin;
+        }
+        if (data.email) {
+            const emailInput = document.getElementById('email');
+            if (emailInput) emailInput.value = data.email;
+        }
+        if (data.photoUrl) {
+            const photoInput = document.getElementById('photo-url');
+            if (photoInput) photoInput.value = data.photoUrl;
+        }
+        
+        // Restore theme/color/font if they exist
+        if (data.theme) {
+            currentTheme = data.theme;
+            // Find and click the corresponding theme button to update UI
+            const themeBtn = Array.from(themeButtons).find(b => b.dataset.theme === currentTheme);
+            if (themeBtn) {
+                // We don't want to re-save immediately on load, but we want UI to sync
+                themeButtons.forEach(b => {
+                    b.classList.remove('bg-accent', 'text-black');
+                    b.classList.add('hover:bg-white/5');
+                });
+                themeBtn.classList.add('bg-accent', 'text-black');
+                themeBtn.classList.remove('hover:bg-white/5');
+            }
+        }
+        if (data.accentColor) {
+            currentAccentColor = data.accentColor;
+            document.documentElement.style.setProperty('--accent', currentAccentColor);
+            document.documentElement.style.setProperty('--accent-rgb', hexToRgb(currentAccentColor));
+            // Sync active swatch
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.remove('active');
+                if (s.dataset.color === currentAccentColor) s.classList.add('active');
+            });
+        }
+        if (data.font) {
+            currentFont = data.font;
+            document.querySelectorAll('.font-option').forEach(b => {
+                b.classList.remove('border-accent/50', 'bg-accent/10', 'text-accent');
+                b.classList.add('border-white/10', 'bg-white/5');
+                if (b.dataset.font === currentFont) {
+                    b.classList.add('border-accent/50', 'bg-accent/10', 'text-accent');
+                    b.classList.remove('border-white/10', 'bg-white/5');
+                }
+            });
+        }
+        
+        console.log('Draft restored from local storage');
+    } catch (e) {
+        console.error('Failed to load auto-save:', e);
+    }
+}
+
 // Contrast helper: returns 'black' or 'white' based on hex background
 function getContrastColor(hexcolor) {
     if (!hexcolor) return 'white';
@@ -98,6 +196,9 @@ async function fetchUser() {
     if (currentUser && !currentUser.isGuest) {
         loadSavedPortfolios();
     }
+    
+    // Load local draft after user status is determined
+    loadFormDataFromLocal();
 }
 fetchUser();
 
@@ -304,6 +405,34 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // --- FORM NAVIGATION ---
+// Auto-save on any input change + Dynamic Header Updates
+portfolioForm.addEventListener('input', (e) => {
+    saveFormDataToLocal();
+    
+    // Live Dynamic Branding
+    if (e.target.id === 'name') {
+        const nameInput = e.target.value.trim();
+        const brandName = document.getElementById('header-brand-name');
+        const logoInitials = document.getElementById('header-logo-initials');
+        
+        if (brandName) {
+            if (nameInput) {
+                const parts = nameInput.split(' ');
+                const first = parts[0];
+                const rest = parts.slice(1).join(' ');
+                brandName.innerHTML = `${first} <span class="text-accent">${rest || ''}</span>`;
+            } else {
+                brandName.innerHTML = 'Your <span class="text-accent">Identity</span>';
+            }
+        }
+        
+        if (logoInitials) {
+            const initials = nameInput ? nameInput.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'AV';
+            logoInitials.textContent = initials;
+        }
+    }
+});
+
 function updateSteps() {
     steps.forEach((step, idx) => {
         if (idx + 1 === currentStep) {
@@ -1459,9 +1588,25 @@ saveBtn.addEventListener('click', async () => {
 });
 
 document.getElementById('download-btn').addEventListener('click', () => {
-    if (!generatedContent) return;
+    // Standalone Export Asset Map
+    const ASSET_MAP = {
+        './images/hero.svg': `<svg width="1400" height="700" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e1b4b" /><stop offset="100%" stop-color="#0f172a" /></linearGradient><linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.3" /><stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.3" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#bg)" /><path d="M-100,-100 Q400,300 900,-50 T1500,200 L1500,-100 Z" fill="url(#glow)" /><circle cx="20%" cy="70%" r="300" fill="#38bdf8" opacity="0.1" /><circle cx="80%" cy="30%" r="400" fill="#818cf8" opacity="0.1" /><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern><rect width="100%" height="100%" fill="url(#grid)" /><text x="50%" y="50%" font-family="monospace" font-size="40" font-weight="bold" fill="rgba(255,255,255,0.2)" text-anchor="middle" dominant-baseline="middle">IDENTITY</text></svg>`,
+        './images/project-1.svg': `<svg width="900" height="500" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f172a" /><stop offset="100%" stop-color="#334155" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#bg1)" /><rect x="50" y="50" width="200" height="400" rx="10" fill="#1e293b" /><rect x="280" y="50" width="570" height="150" rx="10" fill="#1e293b" /><rect x="280" y="230" width="270" height="220" rx="10" fill="#1e293b" /><rect x="580" y="230" width="270" height="220" rx="10" fill="#1e293b" /><circle cx="150" cy="100" r="30" fill="#38bdf8" /><rect x="80" y="160" width="140" height="20" rx="5" fill="#475569" /><rect x="80" y="210" width="140" height="20" rx="5" fill="#475569" /><rect x="80" y="260" width="140" height="20" rx="5" fill="#475569" /><rect x="310" y="90" width="100" height="70" rx="5" fill="#38bdf8" /><rect x="440" y="90" width="100" height="70" rx="5" fill="#818cf8" /><rect x="570" y="90" width="100" height="70" rx="5" fill="#34d399" /><rect x="700" y="90" width="100" height="70" rx="5" fill="#fbbf24" /></svg>`,
+        './images/project-2.svg': `<svg width="900" height="500" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#18181b" /><stop offset="100%" stop-color="#27272a" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#bg2)" /><rect x="300" y="50" width="300" height="600" rx="40" fill="#3f3f46" stroke="#52525b" stroke-width="10"/><rect x="320" y="100" width="260" height="150" rx="20" fill="#52525b" /><rect x="320" y="270" width="120" height="120" rx="15" fill="#52525b" /><rect x="460" y="270" width="120" height="120" rx="15" fill="#52525b" /><rect x="320" y="410" width="120" height="120" rx="15" fill="#52525b" /><rect x="460" y="410" width="120" height="120" rx="15" fill="#52525b" /><circle cx="380" cy="330" r="30" fill="#f43f5e" /><circle cx="520" cy="330" r="30" fill="#a855f7" /><circle cx="450" cy="175" r="50" fill="#3b82f6" opacity="0.8"/></svg>`,
+        './images/project-3.svg': `<svg width="900" height="500" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f2922" /><stop offset="100%" stop-color="#134e4a" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#bg3)" /><circle cx="450" cy="250" r="15" fill="#10b981" /><circle cx="250" cy="150" r="25" fill="#14b8a6" /><circle cx="650" cy="100" r="20" fill="#06b6d4" /><circle cx="300" cy="400" r="30" fill="#6ee7b7" opacity="0.5"/><circle cx="700" cy="350" r="35" fill="#2dd4bf" opacity="0.5"/><circle cx="100" cy="300" r="15" fill="#99f6e4" /><circle cx="800" cy="200" r="20" fill="#5eead4" /><line x1="450" y1="250" x2="250" y2="150" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="450" y1="250" x2="650" y2="100" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="450" y1="250" x2="300" y2="400" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="450" y1="250" x2="700" y2="350" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="250" y1="150" x2="100" y2="300" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="650" y1="100" x2="800" y2="200" stroke="#10b981" stroke-width="2" opacity="0.5"/><line x1="700" y1="350" x2="800" y2="200" stroke="#10b981" stroke-width="2" opacity="0.5"/><rect x="350" y="320" width="200" height="120" rx="8" fill="#022c22" opacity="0.8"/><rect x="370" y="340" width="100" height="8" rx="4" fill="#34d399"/><rect x="370" y="360" width="140" height="8" rx="4" fill="#6ee7b7"/><rect x="370" y="380" width="80" height="8" rx="4" fill="#6ee7b7"/><rect x="370" y="400" width="120" height="8" rx="4" fill="#34d399"/></svg>`,
+        './images/project-4.svg': `<svg width="900" height="500" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2e1065" /><stop offset="100%" stop-color="#4c1d95" /></linearGradient></defs><rect width="100%" height="100%" fill="url(#bg4)" /><circle cx="450" cy="250" r="150" fill="#a78bfa" opacity="0.2"/><rect x="300" y="100" width="150" height="150" transform="rotate(45 375 175)" fill="#c084fc" opacity="0.5"/><rect x="450" y="250" width="150" height="150" transform="rotate(45 525 325)" fill="#e879f9" opacity="0.5"/><circle cx="350" cy="350" r="80" fill="#f472b6" opacity="0.6"/><polygon points="550,150 650,250 500,250" fill="#fb923c" opacity="0.8"/><polygon points="250,250 350,150 200,100" fill="#38bdf8" opacity="0.7"/><rect x="400" y="200" width="100" height="100" rx="20" fill="#fff" opacity="0.9"/><circle cx="450" cy="250" r="20" fill="#4c1d95" /></svg>`
+    };
+
     // Use the editor's content if it has been manually edited, otherwise use the preview pane
-    const html = (codeEditor.dataset.userEdited && codeEditor.value) ? codeEditor.value : previewContent.innerHTML;
+    let htmlContent = (codeEditor.dataset.userEdited && codeEditor.value) ? codeEditor.value : previewContent.innerHTML;
+    
+    // Inline Assets: Replace relative img paths with data URIs or direct SVGs
+    Object.entries(ASSET_MAP).forEach(([path, svg]) => {
+        const svgBase64 = btoa(svg);
+        const dataUri = `data:image/svg+xml;base64,${svgBase64}`;
+        htmlContent = htmlContent.split(`src="${path}"`).join(`src="${dataUri}"`);
+    });
+
     const name = document.getElementById('name').value || 'portfolio';
     const fullPage = `<!DOCTYPE html>
 <html lang="en">
@@ -1470,14 +1615,58 @@ document.getElementById('download-btn').addEventListener('click', () => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${name} — Portfolio</title>
   <script src="https://cdn.tailwindcss.com"><\/script>
-  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @keyframes ping { 75%,100% { transform: scale(2); opacity: 0; } }
-    .animate-ping { animation: ping 1s cubic-bezier(0,0,0.2,1) infinite; }
-    .font-mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; }
+    :root {
+      --accent: ${currentAccentColor};
+      --accent-rgb: ${hexToRgb(currentAccentColor)};
+      --shadow-premium: 0 40px 100px -20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(var(--accent-rgb), 0.1);
+      --shadow-soft: 0 20px 50px -15px rgba(0, 0, 0, 0.4);
+      --gradient-premium: linear-gradient(135deg, var(--accent) 0%, #8B5CF6 50%, #6C63FF 100%);
+    }
+    body {
+      background: #0A0A0F;
+      color: white;
+      font-family: 'General Sans', system-ui, sans-serif;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    .portfolio-root { min-height: 100vh; }
+    .font-clash { font-family: 'Clash Display', sans-serif; }
+    .font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes blob { 0% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-50px) scale(1.1); } 66% { transform: translate(-20px,20px) scale(0.9); } 100% { transform: translate(0,0) scale(1); } }
+    
+    .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+    .animate-fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+    .animate-blob { animation: blob 15s infinite ease-in-out; }
+    
+    .premium-card {
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 2.5rem;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .premium-card:hover {
+      background: rgba(255, 255, 255, 0.03);
+      transform: translateY(-12px) scale(1.02);
+      box-shadow: 0 40px 80px -20px rgba(var(--accent-rgb), 0.2), var(--shadow-premium);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    
+    .portfolio-section { opacity: 1 !important; transform: none !important; }
+    .selection\\:bg-accent\\/30 ::selection { background: rgba(var(--accent-rgb), 0.3); color: white; }
+    
+    /* Smooth Scroll */
+    html { scroll-behavior: smooth; }
   </style>
 </head>
-<body>${html}</body>
+<body class="bg-[#0A0A0F] selection:bg-accent/30 selection:text-white">${htmlContent}</body>
 </html>`;
     const blob = new Blob([fullPage], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
