@@ -249,15 +249,18 @@ prevBtns.forEach(btn => {
 portfolioForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const formData = {
+    // Gather manual inputs
+    lastFormData = {
         name: document.getElementById('name').value,
         role: document.getElementById('role').value,
-        taglineInput: document.getElementById('tagline-input')?.value || '',
-        skills: document.getElementById('skills').value,
-        projects: document.getElementById('projects').value,
+        tagline: document.getElementById('tagline-input')?.value || '',
+        skills: document.getElementById('skills').value.split(',').map(s => s.trim()).filter(s => s),
+        projects: document.getElementById('projects').value, // Projects are still a raw string for AI
+        experience: document.getElementById('experience')?.value.split('\n').map(e => e.trim()).filter(e => e) || [],
         github: document.getElementById('github').value,
-        email: document.getElementById('email')?.value || '',
         linkedin: document.getElementById('linkedin')?.value || '',
+        email: document.getElementById('email')?.value || '',
+        photoUrl: document.getElementById('photo-url')?.value || '',
         accentColor: currentAccentColor,
         font: currentFont,
     };
@@ -349,10 +352,13 @@ async function savePortfolioToDatabase(formData, content) {
 function getDemoData(info) {
     const skillList = info.skills.split(',').map(s => s.trim()).filter(Boolean);
     const projectList = (info.projects || 'Awesome Project, NextGen App').split(',').map(p => p.trim()).filter(Boolean);
+    const experienceList = info.experience ? info.experience.split('\n').map(e => e.trim()).filter(Boolean) : [];
     return {
         tagline: `Crafting high-performance ${info.role} experiences with precision & creative flair.`,
         about: `I'm a passionate ${info.role} who transforms complex challenges into elegant, user-centric solutions. With deep expertise in ${skillList.slice(0, 3).join(', ')}, I build scalable products that people love. I care deeply about clean code, great design, and shipping fast.`,
         skills: skillList,
+        experience: experienceList,
+        photoUrl: info.photoUrl || '',
         github: info.github || '',
         projects: projectList.map((p, i) => ({
             title: p,
@@ -388,22 +394,71 @@ function getSkillIcon(skill) {
     return icons[key] || '🔧';
 }
 
+// --- TYPING ANIMATION HELPER ---
+function typeWriter(element, text, speed = 50) {
+    if (!element) return;
+    element.innerHTML = '';
+    element.classList.add('typing-cursor');
+    let i = 0;
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        } else {
+            // Keep cursor for a bit then remove? Or just leave it.
+            setTimeout(() => element.classList.remove('typing-cursor'), 2000);
+        }
+    }
+    type();
+}
+
 // --- GSAP ANIMATION HELPER ---
 function animatePortfolio() {
     if (typeof gsap === 'undefined') return;
-    gsap.fromTo('#preview-content .portfolio-hero',
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+    
+    // Clear previous animations if any
+    gsap.killTweensOf('#preview-content *');
+
+    const tl = gsap.timeline();
+
+    tl.fromTo('#preview-content .portfolio-hero',
+        { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 1, ease: 'expo.out' }
     );
-    gsap.fromTo('#preview-content .portfolio-section',
+
+    tl.fromTo('#preview-content .portfolio-section',
         { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', stagger: 0.15, delay: 0.2 }
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', stagger: 0.2 },
+        '-=0.5'
     );
-    // Animate skill bars
-    document.querySelectorAll('.skill-bar-fill').forEach(bar => {
+
+    // Animate skill bars with a slight delay
+    document.querySelectorAll('.skill-bar-fill').forEach((bar, i) => {
         const target = bar.dataset.width || '80%';
-        gsap.fromTo(bar, { width: '0%' }, { width: target, duration: 1, ease: 'power2.out', delay: 0.5 });
+        tl.fromTo(bar, 
+            { width: '0%' }, 
+            { width: target, duration: 1.2, ease: 'expo.out' }, 
+            `-=${0.7 - (i * 0.05)}`
+        );
     });
+
+    // Pulse effects for buttons
+    document.querySelectorAll('.portfolio-root .btn-pulse').forEach(btn => {
+        gsap.to(btn, {
+            scale: 1.05,
+            duration: 0.8,
+            repeat: -1,
+            yoyo: true,
+            ease: 'sine.inOut'
+        });
+    });
+
+    // Start typing hero text if element exists
+    const heroTitle = document.querySelector('#preview-content .hero-title-typing');
+    if (heroTitle && lastFormData.name) {
+        typeWriter(heroTitle, lastFormData.name, 100);
+    }
 }
 
 // --- THEME ENGINE ---
@@ -413,7 +468,7 @@ themeButtons.forEach(btn => {
 
         // Update button visual states
         themeButtons.forEach(b => {
-            b.classList.remove('bg-accent', 'text-black');
+            b.classList.remove('bg-accent', 'text-black', 'pulse-btn');
             b.classList.add('hover:bg-white/5');
         });
 
@@ -478,6 +533,10 @@ function renderPortfolio() {
     // DEVELOPER THEME
     // ═══════════════════════════════════════════════
     if (currentTheme === 'developer') {
+        const photo = document.getElementById('photo-url')?.value || generatedContent.photoUrl || '';
+        const linkedin = document.getElementById('linkedin')?.value || '';
+        const experience = generatedContent.experience || [];
+
         html = `
         <div class="portfolio-root font-mono text-white bg-[#070710] min-h-screen" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
             <!-- HERO -->
@@ -486,79 +545,101 @@ function renderPortfolio() {
                 <div class="absolute inset-0">
                     <img src="${heroImg}" class="w-full h-full object-cover opacity-10" alt="hero">
                     <div class="absolute inset-0 bg-gradient-to-br from-[#070710] via-[#0D0D20]/90 to-[#070710]"></div>
-                    <!-- Grid lines -->
                     <div class="absolute inset-0 opacity-[0.03]" style="background-image: linear-gradient(#00D9FF 1px, transparent 1px), linear-gradient(90deg, #00D9FF 1px, transparent 1px); background-size: 40px 40px;"></div>
-                    <!-- Glow blobs -->
-                    <div class="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none"></div>
-                    <div class="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+                    <div class="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none animate-blob"></div>
+                    <div class="absolute bottom-0 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-[100px] pointer-events-none animate-blob" style="animation-delay: 2s"></div>
                 </div>
                 
                 <div class="relative z-10 px-10 pt-16 pb-14">
                     <!-- Status badge -->
-                    <div class="flex items-center gap-2 mb-8">
+                    <div class="flex items-center gap-2 mb-8 animate-fade-in">
                         <span class="relative flex h-2.5 w-2.5">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent"></span>
                         </span>
-                        <span class="text-accent text-xs tracking-[0.3em] uppercase font-bold">Available for opportunities</span>
+                        <span class="text-accent text-xs tracking-[0.3em] uppercase font-bold">System Online & Ready</span>
                     </div>
                     
                     <!-- Avatar + Name Row -->
-                    <div class="flex items-center gap-6 mb-6">
-                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-black text-2xl font-bold shadow-[0_0_30px_rgba(0,217,255,0.4)] flex-shrink-0">
-                            ${initials}
-                        </div>
+                    <div class="flex items-center gap-6 mb-8">
+                        ${photo ? 
+                            `<div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-accent/40 shadow-[0_0_30px_rgba(var(--accent-rgb),0.3)] hover:scale-105 transition-transform duration-500">
+                                <img src="${photo}" class="w-full h-full object-cover" alt="${name}">
+                             </div>` :
+                            `<div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-black text-3xl font-bold shadow-[0_0_30px_rgba(var(--accent-rgb),0.4)] flex-shrink-0 hover:rotate-3 transition-transform">
+                                ${initials}
+                             </div>`
+                        }
                         <div>
                             <div class="text-white/40 text-sm mb-1 tracking-widest uppercase">${role}</div>
-                            <h1 class="text-5xl font-bold leading-none tracking-tight" style="font-family:'Clash Display',monospace">
-                                <span style="background:linear-gradient(120deg,#00D9FF,#818CF8,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${name}</span>
+                            <h1 class="text-5xl font-bold font-clash tracking-tight hero-title-typing">
+                                ${name}
                             </h1>
                         </div>
                     </div>
                     
                     <!-- Tagline -->
-                    <p class="text-xl text-white/60 max-w-2xl leading-relaxed mb-8">${tagline}</p>
+                    <p class="text-xl text-white/60 max-w-2xl leading-relaxed mb-10 animate-fade-in-up" style="animation-delay: 0.3s">${tagline}</p>
                     
                     <!-- CTA Row -->
-                    <div class="flex gap-4 flex-wrap">
-                        <a href="#projects" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black rounded-xl font-bold hover:scale-105 transition-transform shadow-[0_0_25px_rgba(0,217,255,0.4)] text-sm">
+                    <div class="flex gap-4 flex-wrap animate-fade-in-up" style="animation-delay: 0.5s">
+                        <a href="#projects" class="inline-flex items-center gap-2 px-8 py-3.5 bg-accent text-black rounded-xl font-bold hover:scale-105 transition-transform shadow-[0_10px_30px_rgba(var(--accent-rgb),0.3)] text-sm pulse-btn">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            View My Work
+                            View Projects
                         </a>
-                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3 border border-white/10 rounded-xl font-bold hover:bg-white/5 transition-all text-sm text-white/70">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                            GitHub
+                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3.5 border border-white/10 rounded-xl font-bold hover:bg-white/5 hover:border-white/20 transition-all text-sm text-white/70">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>` : ''}
+                        ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" target="_blank" class="inline-flex items-center gap-2 px-6 py-3.5 border border-white/10 rounded-xl font-bold hover:bg-white/5 hover:border-white/20 transition-all text-sm text-white/70">
+                            <i class="fab fa-linkedin"></i> LinkedIn
                         </a>` : ''}
                     </div>
                 </div>
             </div>
 
-            <!-- ABOUT -->
-            <div class="portfolio-section px-10 py-12 border-t border-white/5">
-                <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-6 flex items-center gap-3">
-                    <span class="w-6 h-px bg-accent"></span>About
-                </h2>
-                <p class="text-lg text-white/60 leading-[1.9] max-w-3xl">${about}</p>
+            <!-- ABOUT / EXPERIENCE GRID -->
+            <div class="portfolio-section px-10 py-16 border-t border-white/5">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div>
+                        <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-8 flex items-center gap-3">
+                            <span class="w-6 h-px bg-accent"></span>About Me
+                        </h2>
+                        <p class="text-lg text-white/60 leading-[1.8]">${about}</p>
+                    </div>
+                    ${experience.length > 0 ? `
+                    <div>
+                        <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-8 flex items-center gap-3">
+                            <span class="w-6 h-px bg-accent"></span>Experience
+                        </h2>
+                        <div class="space-y-6">
+                            ${experience.map(exp => `
+                            <div class="premium-card p-5 !bg-white/[0.01]">
+                                <p class="text-white/80 font-bold">${exp}</p>
+                            </div>`).join('')}
+                        </div>
+                    </div>` : ''}
+                </div>
             </div>
 
             <!-- SKILLS -->
-            <div class="portfolio-section px-10 py-12 border-t border-white/5">
-                <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-8 flex items-center gap-3">
-                    <span class="w-6 h-px bg-accent"></span>Technologies
+            <div class="portfolio-section px-10 py-16 border-t border-white/5 bg-[#080812]">
+                <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-10 flex items-center gap-3">
+                    <span class="w-6 h-px bg-accent"></span>Tech Stack
                 </h2>
-                <div class="space-y-5 max-w-2xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                     ${skills.map(s => {
             const w = skillWidth(s);
             return `
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm text-white/80 flex items-center gap-2">
-                                    <span>${getSkillIcon(s)}</span> ${s}
+                        <div class="group">
+                            <div class="flex items-center justify-between mb-2.5">
+                                <span class="text-sm text-white/80 flex items-center gap-3 group-hover:text-accent transition-colors">
+                                    <span class="text-xl">${getSkillIcon(s)}</span> 
+                                    <span class="font-bold tracking-tight">${s}</span>
                                 </span>
-                                <span class="text-xs text-accent font-bold">${w}</span>
+                                <span class="text-[10px] font-mono text-white/20">${w}</span>
                             </div>
-                            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div class="skill-bar-fill h-full rounded-full bg-gradient-to-r from-accent to-blue-400" style="width:0%" data-width="${w}"></div>
+                            <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+                                <div class="skill-bar-fill h-full rounded-full bg-gradient-to-r from-accent via-blue-400 to-purple-500" style="width:0%" data-width="${w}"></div>
                             </div>
                         </div>`;
         }).join('')}
@@ -566,153 +647,32 @@ function renderPortfolio() {
             </div>
 
             <!-- PROJECTS -->
-            <div id="projects" class="portfolio-section px-10 py-12 border-t border-white/5">
-                <h2 class="text-[10px] uppercase tracking-[0.4em] text-accent font-bold mb-10 flex items-center gap-3">
-                    <span class="w-6 h-px bg-accent"></span>Selected Work
-                </h2>
-                <div class="grid grid-cols-1 gap-6">
+            <div id="projects" class="portfolio-section px-10 py-20 border-t border-white/5">
+                <h2 class="text-[10px] uppercase tracking-[0.3em] text-accent font-bold mb-12 text-center">Selected Work</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     ${projects.map((p, i) => {
             const img = `./images/project-${(i % 4) + 1}.svg`;
             return `
-                        <div class="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] hover:border-accent/30 transition-all duration-500 hover:shadow-[0_0_40px_rgba(0,217,255,0.1)]">
-                            <!-- Image -->
-                            <div class="h-52 overflow-hidden relative">
-                                <img src="${img}" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-[1.05] transition-all duration-700" alt="${p.title}">
+                        <div class="group premium-card !p-0 overflow-hidden">
+                            <!-- Image Container -->
+                            <div class="h-64 overflow-hidden relative">
+                                <img src="${img}" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" alt="${p.title}">
                                 <div class="absolute inset-0 bg-gradient-to-t from-[#070710] via-transparent to-transparent"></div>
-                                <!-- Number badge -->
-                                <div class="absolute top-4 right-4 w-9 h-9 rounded-xl bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-xs font-bold text-accent">
-                                    0${i + 1}
+                                <div class="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-bold text-accent uppercase tracking-widest">
+                                    Build 0${i + 1}
                                 </div>
                             </div>
                             <!-- Content -->
-                            <div class="p-6">
-                                <h3 class="text-xl font-bold mb-2 group-hover:text-accent transition-colors">${p.title}</h3>
-                                <p class="text-sm text-white/50 mb-5 leading-relaxed">${p.description}</p>
+                            <div class="p-8">
+                                <h3 class="text-2xl font-bold mb-3 group-hover:text-accent transition-all duration-300 font-clash">${p.title}</h3>
+                                <p class="text-sm text-white/40 mb-6 leading-relaxed">${p.description}</p>
                                 <div class="flex items-center justify-between">
-                                    <div class="flex gap-2 flex-wrap">
-                                        ${p.tech.map(t => `<span class="text-[10px] bg-white/5 border border-white/10 px-3 py-1 rounded-full text-white/50 hover:border-accent/40 hover:text-accent transition-all">${t}</span>`).join('')}
+                                    <div class="flex gap-2.5 flex-wrap">
+                                        ${p.tech.map(t => `<span class="text-[9px] bg-white/5 border border-white/8 px-3 py-1.5 rounded-lg text-white/50 font-bold uppercase tracking-wider">${t}</span>`).join('')}
                                     </div>
-                                    ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="text-white/30 hover:text-accent transition-colors">
-                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                                    </a>` : ''}
-                                </div>
-                            </div>
-                        </div>`;
-        }).join('')}
-                </div>
-            </div>
-
-            <!-- CONTACT / FOOTER -->
-            <div class="portfolio-section px-10 py-14 border-t border-white/5 text-center">
-                <div class="max-w-xl mx-auto">
-                    <div class="text-4xl mb-4">🚀</div>
-                    <h2 class="text-3xl font-bold mb-4 font-clash">Let's work together</h2>
-                    <p class="text-white/40 mb-8 leading-relaxed">I'm currently open to new opportunities. Whether you have a project in mind or just want to say hello — my inbox is always open.</p>
-                    <div class="flex gap-4 justify-center flex-wrap">
-                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="inline-flex items-center gap-2 px-5 py-3 bg-white/5 border border-white/10 rounded-xl hover:border-accent/50 hover:text-accent transition-all text-sm text-white/60">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-                            @${githubUser.replace(/^.*github\.com\//, '')}
-                        </a>` : ''}
-                        <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="inline-flex items-center gap-2 px-5 py-3 bg-accent text-black rounded-xl font-bold hover:scale-105 transition-transform text-sm shadow-[0_0_20px_rgba(0,217,255,0.3)]">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                            Say Hello
-                        </a>
-                    </div>
-                    <p class="text-white/20 text-xs mt-10">Built with AI Portfolio Pro · ${new Date().getFullYear()}</p>
-                </div>
-            </div>
-        </div>`;
-
-        // ═══════════════════════════════════════════════
-        // STARTUP THEME
-        // ═══════════════════════════════════════════════
-    } else if (currentTheme === 'startup') {
-        html = `
-        <div class="portfolio-root font-[system-ui] bg-white text-[#111] min-h-screen -m-12 pb-0" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
-            <!-- HERO -->
-            <div class="portfolio-hero relative overflow-hidden bg-white pt-20 pb-0 px-12">
-                <!-- Subtle gradient BG -->
-                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#f0f9ff,#fff_60%)]"></div>
-                
-                <div class="relative z-10 max-w-4xl mx-auto">
-                    <!-- Badge -->
-                    <div class="inline-flex items-center gap-2 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em] px-4 py-2 rounded-full mb-8">
-                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                        Open to work
-                    </div>
-                    
-                    <!-- Avatar -->
-                    <div class="mb-6">
-                        <div class="w-24 h-24 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-white text-3xl font-bold shadow-2xl">
-                            ${initials}
-                        </div>
-                    </div>
-                    
-                    <h1 class="text-7xl font-black tracking-tighter leading-none mb-4">${name}</h1>
-                    <div class="text-2xl text-slate-400 font-medium mb-6">${role}</div>
-                    <p class="text-xl text-slate-500 max-w-2xl leading-relaxed mb-10">${tagline}</p>
-                    
-                    <div class="flex gap-4 mb-16">
-                        <a href="#work" class="px-7 py-4 bg-black text-white rounded-2xl font-bold hover:scale-[1.03] transition-transform shadow-xl shadow-black/20 text-sm">
-                            View Work ↓
-                        </a>
-                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="px-7 py-4 border-2 border-slate-200 rounded-2xl font-bold hover:border-slate-400 transition-colors text-sm text-slate-700">
-                            GitHub
-                        </a>` : ''}
-                    </div>
-                </div>
-                
-                <!-- Hero banner image -->
-                <div class="relative h-[360px] overflow-hidden rounded-t-[40px] mx-auto max-w-5xl shadow-[0_-20px_60px_rgba(0,0,0,0.08)] bg-slate-100">
-                    <img src="${heroImg}" class="w-full h-full object-cover" alt="${name}">
-                </div>
-            </div>
-
-            <!-- ABOUT -->
-            <div class="portfolio-section max-w-4xl mx-auto px-12 py-20">
-                <div class="grid grid-cols-5 gap-16 items-start">
-                    <div class="col-span-2">
-                        <div class="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-4">About</div>
-                        <h2 class="text-4xl font-black leading-tight tracking-tight">Who<br>I am.</h2>
-                    </div>
-                    <div class="col-span-3">
-                        <p class="text-xl leading-relaxed text-slate-500">${about}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SKILLS -->
-            <div class="portfolio-section bg-slate-50 py-16">
-                <div class="max-w-4xl mx-auto px-12">
-                    <div class="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-8">Skills & Tools</div>
-                    <div class="flex flex-wrap gap-3">
-                        ${skills.map(s => `
-                        <div class="flex items-center gap-2 bg-white text-slate-700 px-5 py-3 rounded-2xl font-semibold text-sm shadow-sm border border-slate-100 hover:-translate-y-0.5 transition-transform">
-                            <span>${getSkillIcon(s)}</span> ${s}
-                        </div>`).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <!-- PROJECTS -->
-            <div id="work" class="portfolio-section max-w-4xl mx-auto px-12 py-20">
-                <div class="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-bold mb-12">Selected Work</div>
-                <div class="space-y-16">
-                    ${projects.map((p, i) => {
-            const img = `./images/project-${(i % 4) + 1}.svg`;
-            return `
-                        <div class="group">
-                            <div class="aspect-video w-full overflow-hidden rounded-[30px] mb-8 shadow-xl shadow-slate-200/80 bg-slate-100">
-                                <img src="${img}" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" alt="${p.title}">
-                            </div>
-                            <div class="flex items-start justify-between gap-8">
-                                <div>
-                                    <div class="text-[10px] uppercase tracking-widest text-slate-400 mb-2">Project 0${i + 1}</div>
-                                    <h3 class="text-3xl font-black tracking-tight mb-3">${p.title}</h3>
-                                    <p class="text-slate-500 text-lg leading-relaxed max-w-xl">${p.description}</p>
-                                </div>
-                                <div class="flex flex-col gap-2 flex-shrink-0">
-                                    ${p.tech.map(t => `<span class="text-[10px] bg-slate-100 px-3 py-1.5 rounded-lg font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">${t}</span>`).join('')}
+                                    <a href="#" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/30 hover:bg-accent hover:text-black transition-all">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
                             </div>
                         </div>`;
@@ -721,20 +681,199 @@ function renderPortfolio() {
             </div>
 
             <!-- CONTACT -->
-            <div class="portfolio-section bg-black text-white py-24 px-12">
-                <div class="max-w-4xl mx-auto text-center">
-                    <div class="text-[10px] uppercase tracking-[0.3em] text-white/30 font-bold mb-6">Contact</div>
-                    <h2 class="text-6xl font-black tracking-tighter mb-6">Let's create<br>something great.</h2>
-                    <p class="text-xl text-white/40 mb-12 max-w-lg mx-auto">Open to freelance projects, full-time roles, and creative collaborations.</p>
+            <div class="portfolio-section px-10 py-24 border-t border-white/5 bg-gradient-to-b from-[#070710] to-black">
+                <div class="max-w-2xl mx-auto text-center">
+                    <div class="w-20 h-20 bg-accent/10 rounded-3xl flex items-center justify-center text-accent text-3xl mx-auto mb-10 shadow-[0_0_50px_rgba(var(--accent-rgb),0.2)] animate-pulse">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <h2 class="text-5xl font-black mb-6 font-clash">Ready for the next sprint?</h2>
+                    <p class="text-white/40 mb-12 text-lg">Currently available for selected freelance opportunities and innovative role collaborations.</p>
                     <div class="flex gap-4 justify-center flex-wrap">
-                        <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="px-8 py-4 bg-white text-black rounded-2xl font-bold hover:scale-105 transition-transform text-sm">
-                            📧 Get In Touch
+                        <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="px-10 py-4 bg-accent text-black rounded-xl font-bold hover:scale-105 transition-transform text-lg shadow-[0_15px_40px_rgba(var(--accent-rgb),0.35)] pulse-btn">
+                            Initiate Contact
                         </a>
-                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="px-8 py-4 border border-white/20 rounded-2xl font-bold hover:bg-white/10 transition-all text-sm">
-                            GitHub →
+                        ${githubUser ? `<a href="https://github.com/${githubUser}" class="px-8 py-4 bg-white/5 border border-white/10 rounded-xl font-bold hover:bg-white/10 transition-all text-white/60">
+                            Source Files
                         </a>` : ''}
                     </div>
-                    <p class="text-white/20 text-xs mt-16">© ${new Date().getFullYear()} ${name} · Built with AI Portfolio Pro</p>
+                    <div class="mt-20 pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <p class="text-white/20 text-xs">© ${new Date().getFullYear()} ${name} · Engineered with AI Pro</p>
+                        <div class="flex gap-6">
+                            ${githubUser ? `<a href="https://github.com/${githubUser}" class="text-white/20 hover:text-accent text-lg transition-colors"><i class="fab fa-github"></i></a>` : ''}
+                            ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" class="text-white/20 hover:text-accent text-lg transition-colors"><i class="fab fa-linkedin"></i></a>` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // ═══════════════════════════════════════════════
+        // STARTUP THEME
+        // ═══════════════════════════════════════════════
+    } else if (currentTheme === 'startup') {
+        const photo = document.getElementById('photo-url')?.value || generatedContent.photoUrl || '';
+        const linkedin = document.getElementById('linkedin')?.value || '';
+        const experience = generatedContent.experience || [];
+        
+        html = `
+        <div class="portfolio-root font-sans bg-white text-[#111] min-h-screen pb-0" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+            <!-- Navigation -->
+            <nav class="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-slate-100 px-12 py-5 flex items-center justify-between">
+                <div class="font-black text-xl tracking-tighter">${initials}</div>
+                <div class="flex gap-8 items-center">
+                    <a href="#work" class="text-sm font-bold text-slate-500 hover:text-black">Work</a>
+                    <a href="#about" class="text-sm font-bold text-slate-500 hover:text-black">About</a>
+                    <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="px-5 py-2.5 bg-black text-white rounded-full text-xs font-bold hover:scale-105 transition-transform pulse-btn">Let's Talk</a>
+                </div>
+            </nav>
+
+            <!-- HERO -->
+            <div class="portfolio-hero relative overflow-hidden bg-white pt-24 pb-0 px-12">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,#f0f9ff,#fff_60%)]"></div>
+                
+                <div class="relative z-10 max-w-5xl mx-auto">
+                    <div class="inline-flex items-center gap-2 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-[0.25em] px-5 py-2.5 rounded-full mb-10 animate-fade-in">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Available for Scale
+                    </div>
+                    
+                    <div class="flex flex-col lg:flex-row items-start lg:items-center gap-12 mb-16">
+                        <div class="flex-1">
+                            <h1 class="text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] mb-8 hero-title-typing">
+                                ${name}
+                            </h1>
+                            <p class="text-2xl text-slate-400 font-medium mb-10 max-w-2xl leading-relaxed animate-fade-in-up" style="animation-delay: 0.3s">${tagline}</p>
+                            <div class="flex gap-5 animate-fade-in-up" style="animation-delay: 0.5s">
+                                <a href="#work" class="px-8 py-4.5 bg-black text-white rounded-2xl font-bold hover:scale-[1.03] transition-transform shadow-2xl shadow-black/20 text-base">
+                                    Explore Portfolio
+                                </a>
+                                ${githubUser ? `<a href="https://github.com/${githubUser}" target="_blank" class="px-8 py-4.5 border-2 border-slate-200 rounded-2xl font-bold hover:border-slate-800 transition-all text-base text-slate-700">
+                                    Source
+                                </a>` : ''}
+                            </div>
+                        </div>
+                        ${photo ? 
+                            `<div class="w-64 h-80 rounded-[40px] overflow-hidden rotate-2 shadow-2xl border-8 border-white animate-fade-in">
+                                <img src="${photo}" class="w-full h-full object-cover" alt="${name}">
+                             </div>` :
+                            `<div class="w-64 h-64 rounded-[50px] bg-gradient-to-br from-slate-900 to-slate-700 flex items-center justify-center text-white text-6xl font-black shadow-2xl rotate-3">
+                                ${initials}
+                             </div>`
+                        }
+                    </div>
+                </div>
+                
+                <!-- Hero Visual -->
+                <div class="relative h-[480px] overflow-hidden rounded-t-[60px] mx-auto max-w-6xl shadow-[0_-30px_100px_rgba(0,0,0,0.08)] bg-slate-50 mt-12 group">
+                    <img src="${heroImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-2000" alt="Work Process">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent"></div>
+                </div>
+            </div>
+
+            <!-- ABOUT & STATS -->
+            <div id="about" class="portfolio-section max-w-5xl mx-auto px-12 py-32">
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-20 items-start">
+                    <div class="lg:col-span-2">
+                        <h2 class="text-[10px] uppercase tracking-[0.4em] text-slate-400 font-black mb-6">Manifesto</h2>
+                        <h3 class="text-5xl font-black leading-tight tracking-tighter">Building products people love.</h3>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <p class="text-2xl leading-relaxed text-slate-500 font-medium">${about}</p>
+                    </div>
+                </div>
+
+                ${experience.length > 0 ? `
+                <div class="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="md:col-span-1">
+                        <h2 class="text-[10px] uppercase tracking-[0.4em] text-slate-400 font-black mb-6">Career Path</h2>
+                    </div>
+                    <div class="md:col-span-2 space-y-12">
+                        ${experience.slice(0, 3).map(exp => {
+                            const [role, comp] = exp.split(' at ');
+                            return `
+                            <div class="flex gap-8 group">
+                                <div class="text-4xl font-black text-slate-100 group-hover:text-black transition-colors duration-500">→</div>
+                                <div>
+                                    <h4 class="text-2xl font-black">${role}</h4>
+                                    <p class="text-lg text-slate-400 font-bold">${comp || ''}</p>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                </div>` : ''}
+            </div>
+
+            <!-- SKILLS -->
+            <div class="portfolio-section bg-slate-50 py-24 border-y border-slate-100">
+                <div class="max-w-5xl mx-auto px-12 text-center">
+                    <h2 class="text-[10px] uppercase tracking-[0.5em] text-slate-400 font-black mb-16">Core Competencies</h2>
+                    <div class="flex flex-wrap justify-center gap-6">
+                        ${skills.map(s => `
+                        <div class="flex items-center gap-4 bg-white text-slate-800 px-8 py-5 rounded-3xl font-bold text-lg shadow-xl shadow-slate-200/50 border border-slate-100 hover:-translate-y-2 transition-transform duration-300">
+                            <span class="text-2xl">${getSkillIcon(s)}</span> ${s}
+                        </div>`).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROJECTS -->
+            <div id="work" class="portfolio-section max-w-5xl mx-auto px-12 py-32">
+                <div class="flex items-end justify-between mb-20">
+                    <div>
+                        <h2 class="text-[10px] uppercase tracking-[0.4em] text-slate-400 font-black mb-6">Portfolio</h2>
+                        <h3 class="text-5xl font-black tracking-tighter">Case Studies</h3>
+                    </div>
+                    <div class="text-right hidden md:block">
+                        <p class="text-slate-400 font-bold max-w-xs text-sm">A collection of products, experiments, and high-impact projects.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-32">
+                    ${projects.map((p, i) => {
+            const img = `./images/project-${(i % 4) + 1}.svg`;
+            const isEven = i % 2 === 0;
+            return `
+                        <div class="group grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+                            <div class="lg:col-span-7 ${isEven ? 'lg:order-1' : 'lg:order-2'} aspect-[4/3] w-full overflow-hidden rounded-[50px] shadow-3xl shadow-slate-200/80 bg-slate-100">
+                                <img src="${img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt="${p.title}">
+                            </div>
+                            <div class="lg:col-span-5 ${isEven ? 'lg:order-2' : 'lg:order-1'}">
+                                <div class="text-[10px] font-black tracking-widest text-[#111] opacity-20 mb-4">0${i + 1} / Project</div>
+                                <h3 class="text-4xl font-black tracking-tighter mb-6">${p.title}</h3>
+                                <p class="text-slate-500 text-lg leading-relaxed mb-8">${p.description}</p>
+                                <div class="flex flex-wrap gap-3 mb-10">
+                                    ${p.tech.map(t => `<span class="text-[10px] bg-slate-100 px-4 py-2 rounded-xl font-bold text-slate-600 uppercase tracking-widest">${t}</span>`).join('')}
+                                </div>
+                                <a href="#" class="inline-flex items-center gap-2 text-black font-black text-sm uppercase tracking-widest border-b-2 border-black pb-1 hover:gap-4 transition-all">
+                                    View Repository <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>`;
+        }).join('')}
+                </div>
+            </div>
+
+            <!-- CTA -->
+            <div class="portfolio-section bg-black text-white py-40 px-12 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 to-transparent"></div>
+                <div class="max-w-4xl mx-auto text-center relative z-10">
+                    <h2 class="text-7xl lg:text-8xl font-black tracking-tighter mb-10 leading-[0.9]">Let's build<br>the future.</h2>
+                    <p class="text-xl text-white/40 mb-16 max-w-xl mx-auto font-medium">Have a vision for a project? Let's turn it into reality with cutting-edge tech and elite design.</p>
+                    <div class="flex gap-6 justify-center flex-wrap">
+                        <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="px-12 py-6 bg-white text-black rounded-3xl font-black hover:scale-110 transition-transform text-lg pulse-btn">
+                            Get In Touch
+                        </a>
+                        ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" target="_blank" class="px-12 py-6 border-2 border-white/20 rounded-3xl font-black hover:bg-white/10 transition-all text-lg">
+                            LinkedIn
+                        </a>` : ''}
+                    </div>
+                    <div class="mt-32 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8 opacity-40">
+                        <p class="text-xs font-bold uppercase tracking-widest">© ${new Date().getFullYear()} ${name}</p>
+                        <div class="flex gap-10">
+                            ${githubUser ? `<a href="https://github.com/${githubUser}" class="hover:text-white transition-colors"><i class="fab fa-github fa-lg"></i></a>` : ''}
+                            ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" class="hover:text-white transition-colors"><i class="fab fa-linkedin fa-lg"></i></a>` : ''}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -892,57 +1031,166 @@ function renderPortfolio() {
     // ═══════════════════════════════════════════════
     // MINIMAL THEME
     // ═══════════════════════════════════════════════
-    if (currentTheme === 'minimal') {
-        const accent = currentAccentColor;
+    else if (currentTheme === 'minimal') {
+        const photo = document.getElementById('photo-url')?.value || generatedContent.photoUrl || '';
+        const linkedin = document.getElementById('linkedin')?.value || '';
+        
         html = `
-        <div class="portfolio-root" style="background:#fff;color:#111;min-height:100vh;${selectedFontStyle}">
-            <!-- Header -->
-            <div class="portfolio-hero" style="max-width:680px;margin:0 auto;padding:72px 24px 48px">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:48px">
-                    <div style="width:44px;height:44px;background:${accent};border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#000;font-size:14px">${initials}</div>
-                    ${githubUser ? `<a href="https://github.com/${githubUser}" target="_blank" style="color:#888;font-size:13px;text-decoration:none;border:1px solid #eee;padding:6px 14px;border-radius:20px;transition:all 0.2s" onmouseover="this.style.borderColor='${accent}'" onmouseout="this.style.borderColor='#eee'">GitHub ↗</a>` : ''}
-                </div>
-                <h1 style="font-size:3rem;font-weight:800;line-height:1.1;letter-spacing:-2px;margin-bottom:12px;color:#111">${name}</h1>
-                <p style="font-size:1.1rem;color:#555;margin-bottom:16px">${role}</p>
-                <p style="font-size:0.95rem;color:#777;line-height:1.7;max-width:540px;border-left:3px solid ${accent};padding-left:16px">${tagline}</p>
-            </div>
-
-            <!-- About -->
-            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 48px">
-                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:16px">About</p>
-                <p style="font-size:1rem;color:#444;line-height:1.8">${about}</p>
-            </div>
-
-            <!-- Skills -->
-            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 48px">
-                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:16px">Skills</p>
-                <div style="display:flex;flex-wrap:wrap;gap:8px">
-                    ${skills.map(s => `<span style="font-size:0.8rem;padding:4px 12px;background:#f5f5f5;border-radius:20px;color:#444">${s}</span>`).join('')}
-                </div>
-            </div>
-
-            <!-- Projects -->
-            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 64px">
-                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:24px">Projects</p>
-                <div style="display:flex;flex-direction:column;gap:24px">
-                    ${projects.map((p, i) => `
-                    <div style="padding:24px;border:1px solid #eee;border-radius:16px;transition:all 0.2s" class="card-hover">
-                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
-                            <h3 style="font-size:1.05rem;font-weight:700;color:#111">${p.title}</h3>
-                            <span style="font-size:0.7rem;color:#aaa;font-family:monospace">0${i+1}</span>
+        <div class="portfolio-root font-sans bg-white text-zinc-900 min-h-screen px-6 py-12 md:px-20 md:py-32" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+            <div class="max-w-3xl mx-auto">
+                <!-- Header -->
+                <header class="portfolio-hero mb-24">
+                    <div class="flex items-center gap-8 mb-12">
+                        ${photo ? 
+                            `<div class="w-24 h-24 rounded-full overflow-hidden grayscale hover:grayscale-0 transition-all duration-700">
+                                <img src="${photo}" class="w-full h-full object-cover" alt="${name}">
+                             </div>` : 
+                            `<div class="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 text-3xl font-light">
+                                ${initials}
+                             </div>`
+                        }
+                        <div>
+                            <h1 class="text-4xl font-light tracking-tight mb-2 hero-title-typing">${name}</h1>
+                            <p class="text-zinc-400 text-lg uppercase tracking-widest font-medium">${role}</p>
                         </div>
-                        <p style="font-size:0.875rem;color:#666;line-height:1.6;margin-bottom:12px">${p.description}</p>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap">
-                            ${p.tech.map(t => `<span style="font-size:0.7rem;padding:2px 8px;background:#f5f5f5;color:#666;border-radius:10px">${t}</span>`).join('')}
-                        </div>
-                    </div>`).join('')}
-                </div>
-            </div>
+                    </div>
+                    <p class="text-2xl text-zinc-500 leading-relaxed font-light mb-10 animate-fade-in-up" style="animation-delay: 0.3s">${tagline}</p>
+                    <div class="flex gap-8 animate-fade-in-up" style="animation-delay: 0.5s">
+                        <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="text-sm font-bold border-b-2 border-zinc-900 pb-1 hover:opacity-50 transition-opacity">Email</a>
+                        ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" target="_blank" class="text-sm font-bold border-b-2 border-zinc-900 pb-1 hover:opacity-50 transition-opacity">GitHub</a>` : ''}
+                        ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" target="_blank" class="text-sm font-bold border-b-2 border-zinc-900 pb-1 hover:opacity-50 transition-opacity">LinkedIn</a>` : ''}
+                    </div>
+                </header>
 
-            <!-- Footer -->
-            <div style="border-top:1px solid #eee;max-width:680px;margin:0 auto;padding:32px 24px;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-size:0.8rem;color:#aaa">© ${new Date().getFullYear()} ${name}</span>
-                ${lastFormData?.email ? `<a href="mailto:${lastFormData.email}" style="font-size:0.85rem;color:${accent};text-decoration:none;font-weight:600">${lastFormData.email}</a>` : ''}
+                <!-- About -->
+                <section class="portfolio-section mb-24 border-l-4 border-zinc-50 pl-8">
+                    <h2 class="text-xs uppercase tracking-widest text-zinc-300 font-bold mb-8">Statement</h2>
+                    <p class="text-zinc-600 text-xl leading-[1.8] font-light italic">${about}</p>
+                </section>
+
+                <!-- Work -->
+                <section class="portfolio-section mb-24">
+                    <h2 class="text-xs uppercase tracking-widest text-zinc-300 font-bold mb-12">Selected Work</h2>
+                    <div class="space-y-20">
+                        ${projects.map((p, i) => `
+                        <div class="group">
+                            <div class="flex justify-between items-baseline mb-4">
+                                <h3 class="text-2xl font-light group-hover:text-black transition-colors">${p.title}</h3>
+                                <span class="text-[10px] items-center text-zinc-200 font-mono tracking-tighter">0${i + 1}</span>
+                            </div>
+                            <p class="text-zinc-500 mb-6 leading-relaxed max-w-xl">${p.description}</p>
+                            <div class="flex gap-4">
+                                ${p.tech.map(t => `<span class="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">${t}</span>`).join('<span class="text-zinc-200">/</span>')}
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <footer class="portfolio-section pt-12 border-t border-zinc-100 flex justify-between items-center">
+                    <p class="text-[10px] text-zinc-300 uppercase tracking-widest">© ${new Date().getFullYear()} ${name}</p>
+                    <div class="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white text-[10px] font-bold">A+</div>
+                </footer>
+            </div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // RESUME THEME
+    // ═══════════════════════════════════════════════
+    if (currentTheme === 'resume') {
+        const photo = document.getElementById('photo-url')?.value || generatedContent.photoUrl || '';
+        const linkedin = document.getElementById('linkedin')?.value || '';
+        const experience = generatedContent.experience || [];
+
+        html = `
+        <div class="portfolio-root font-serif bg-[#fdfdfd] text-[#222] min-h-screen p-8 md:p-16" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+            <div class="max-w-4xl mx-auto bg-white shadow-[0_0_50px_rgba(0,0,0,0.03)] border border-zinc-100 p-10 md:p-20 relative animate-fade-in">
+                <!-- Decor Line -->
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-zinc-900"></div>
+                
+                <div class="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
+                    <div class="portfolio-hero">
+                        <h1 class="text-5xl font-black tracking-tight mb-4 hero-title-typing">${name}</h1>
+                        <p class="text-xl text-zinc-500 font-sans italic mb-8">${role}</p>
+                        <div class="flex gap-6 font-sans text-xs font-bold uppercase tracking-widest text-zinc-400">
+                            ${githubUser ? `<a href="https://github.com/${githubUser.replace(/^.*github\.com\//, '')}" class="hover:text-black">GitHub</a>` : ''}
+                            ${linkedin ? `<a href="https://${linkedin.replace('https://','')}" class="hover:text-black">LinkedIn</a>` : ''}
+                            <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="hover:text-black">Email</a>
+                        </div>
+                    </div>
+                    ${photo ? 
+                        `<div class="w-32 h-32 border-4 border-white shadow-xl rotate-2 shrink-0 overflow-hidden">
+                            <img src="${photo}" class="w-full h-full object-cover grayscale" alt="${name}">
+                         </div>` : 
+                        `<div class="w-32 h-32 bg-zinc-50 border border-zinc-100 shrink-0 flex items-center justify-center text-zinc-200 text-3xl font-bold">
+                            ${initials}
+                         </div>`
+                    }
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-16">
+                    <div class="md:col-span-2">
+                        <section class="portfolio-section mb-16">
+                            <h2 class="text-sm font-sans font-black uppercase tracking-[0.3em] mb-8 border-b border-zinc-100 pb-2">Profile</h2>
+                            <p class="text-lg leading-relaxed text-zinc-600">${about}</p>
+                        </section>
+
+                        <section class="portfolio-section mb-16">
+                            <h2 class="text-sm font-sans font-black uppercase tracking-[0.3em] mb-8 border-b border-zinc-100 pb-2">Experience</h2>
+                            <div class="space-y-10">
+                                ${experience.map(exp => {
+                                    const [role, comp] = exp.split(' at ');
+                                    return `
+                                    <div class="relative pl-6 border-l border-zinc-100">
+                                        <div class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-zinc-200"></div>
+                                        <h3 class="text-xl font-bold">${role}</h3>
+                                        <p class="text-zinc-500 italic mb-2">${comp || ''}</p>
+                                    </div>`;
+                                }).join('')}
+                                ${experience.length === 0 ? '<p class="text-zinc-400 italic">Experience details coming soon...</p>' : ''}
+                            </div>
+                        </section>
+
+                        <section class="portfolio-section">
+                            <h2 class="text-sm font-sans font-black uppercase tracking-[0.3em] mb-8 border-b border-zinc-100 pb-2">Work Samples</h2>
+                            <div class="space-y-8">
+                                ${projects.map(p => `
+                                <div>
+                                    <h3 class="font-bold underline italic text-lg decoration-zinc-200 underline-offset-4 mb-2">${p.title}</h3>
+                                    <p class="text-zinc-600 text-sm leading-relaxed">${p.description}</p>
+                                </div>`).join('')}
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="md:col-span-1 font-sans">
+                        <section class="portfolio-section mb-16">
+                            <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 border-b border-zinc-100 pb-2">Expertise</h2>
+                            <div class="flex flex-wrap gap-2">
+                                ${skills.map(s => `<span class="px-3 py-1 bg-zinc-50 border border-zinc-100 text-[10px] font-bold uppercase tracking-widest text-zinc-500">${s}</span>`).join('')}
+                            </div>
+                        </section>
+
+                        <section class="portfolio-section">
+                            <h2 class="text-sm font-black uppercase tracking-[0.3em] mb-8 border-b border-zinc-100 pb-2">Contact Info</h2>
+                            <div class="space-y-4 text-xs">
+                                <div>
+                                    <div class="text-zinc-300 font-bold mb-1 uppercase tracking-tighter">Availability</div>
+                                    <div class="font-bold">Worldwide / Remote</div>
+                                </div>
+                                <div>
+                                    <div class="text-zinc-300 font-bold mb-1 uppercase tracking-tighter">Location</div>
+                                    <div class="font-bold">Digital Nomad</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+                <div class="mt-20 pt-10 border-t border-zinc-100 text-center">
+                    <p class="text-[10px] font-sans font-bold text-zinc-300 uppercase tracking-[0.5em]">Fine Art of Engineering</p>
+                </div>
             </div>
         </div>`;
     }
