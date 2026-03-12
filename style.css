@@ -5,13 +5,14 @@
 @layer base {
   :root {
     --accent: #00D9FF;
-    --accent-glow: rgba(0, 217, 255, 0.5);
+    --accent-rgb: 0, 217, 255;
+    --accent-glow: rgba(var(--accent-rgb), 0.5);
     --bg-dark: #0A0A0F;
     --glass-bg: rgba(255, 255, 255, 0.03);
     --glass-border: rgba(255, 255, 255, 0.08);
     --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.5);
     --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    --hover-shadow: 0 20px 40px rgba(0, 217, 255, 0.15);
+    --hover-shadow: 0 20px 40px rgba(var(--accent-rgb), 0.15);
   }
   body {
     @apply transition-colors duration-500 bg-[#0A0A0F] text-white selection:bg-accent/30;
@@ -20,14 +21,14 @@
 
 @layer components {
   .form-input {
-    @apply w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent/60 focus:bg-white/10 focus:ring-1 focus:ring-accent/30 transition-all duration-300 placeholder:text-white/25 shadow-none;
+    @apply w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-accent/60 dark:focus:bg-white/10 focus:ring-1 focus:ring-accent/30 transition-all duration-300 placeholder:text-slate-400 dark:placeholder:text-white/25 shadow-none;
   }
   .form-input:hover {
-    @apply border-white/20 bg-white/[0.07];
+    @apply border-slate-300 dark:border-white/20 bg-slate-200 dark:bg-white/[0.07];
   }
 
   .btn-ghost {
-    @apply hover:bg-white/10 dark:hover:bg-white/10 rounded-full transition-all text-white/50 hover:text-white px-4 py-2;
+    @apply hover:bg-slate-200 dark:hover:bg-white/10 rounded-full transition-all text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white px-4 py-2;
   }
 
   /* Premium Card Styles */
@@ -49,7 +50,7 @@
   }
 
   .premium-card {
-    @apply bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md transition-all duration-500 hover:scale-[1.02] hover:bg-white/10 hover:border-white/20 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)];
+    @apply bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6 backdrop-blur-md transition-all duration-500 hover:scale-[1.02] hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-300 dark:hover:border-white/20 hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)];
   }
   .premium-card:hover {
     transform: translateY(-8px);
@@ -72,10 +73,25 @@
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full border-2 border-transparent bg-clip-padding;
+    @apply bg-slate-300 dark:bg-white/10 rounded-full border-2 border-transparent bg-clip-padding;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-white/30;
+    @apply bg-slate-400 dark:bg-white/30;
+  }
+
+  /* Color Swatches */
+  .color-swatch {
+    @apply w-8 h-8 rounded-full cursor-pointer border-2 border-transparent transition-all hover:scale-110 active:scale-90;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  .color-swatch.active {
+    @apply border-white scale-110;
+    box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.5);
+  }
+
+  /* Font Options */
+  .font-option {
+    @apply transition-all duration-300;
   }
 }
 
@@ -147,11 +163,20 @@
   border: 1px solid var(--glass-border);
 }
 
+/* Header Tweaks */
+header {
+  transition: all 0.3s ease;
+}
+
+#user-dropdown {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 217, 255, 0.1);
+}
+
 /* Button Pulse */
 @keyframes pulse-glow {
-  0% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.4); }
-  70% { box-shadow: 0 0 0 15px rgba(0, 217, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 217, 255, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(var(--accent-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
 }
 
 .pulse-btn {
@@ -159,13 +184,25 @@
 }
 
 #generate-btn {
-  @apply relative overflow-hidden;
+  @apply relative overflow-hidden bg-gradient-to-br from-accent via-accent to-purple-500 text-black border-none shadow-[0_0_20px_rgba(var(--accent-rgb),0.3)];
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+#generate-btn::before {
+  content: '';
+  @apply absolute inset-0 bg-white/20 opacity-0 transition-opacity duration-300;
+}
+
+#generate-btn:hover::before {
+  @apply opacity-100;
+}
+
 #generate-btn:hover {
-  @apply scale-105;
-  box-shadow: 0 15px 35px rgba(0, 217, 255, 0.4);
+  @apply scale-105 -translate-y-0.5 shadow-[0_15px_35px_rgba(var(--accent-rgb),0.5)];
+}
+
+#generate-btn:active {
+  @apply scale-95 translate-y-0;
 }
 
 /* Background Animations */

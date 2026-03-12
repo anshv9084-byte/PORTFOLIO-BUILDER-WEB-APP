@@ -11,9 +11,9 @@ module.exports = {
     extend: {
       colors: {
         accent: {
-          DEFAULT: '#00D9FF',
-          hover: '#00B8D9',
-          glow: 'rgba(0, 217, 255, 0.4)',
+          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
+          hover: 'var(--accent-hover)',
+          glow: 'var(--accent-glow)',
         }
       },
       fontFamily: {

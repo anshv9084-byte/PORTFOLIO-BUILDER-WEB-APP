@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Portfolio Pro — Build Your Developer Identity</title>
+    <title>Ansh Verma — Build Your Developer Identity</title>
     <meta name="description" content="Create a stunning professional portfolio in minutes with AI. Choose a template, enter your info, and get a fully generated, exportable portfolio instantly.">
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700,800&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -110,12 +110,48 @@
     <nav>
         <div class="nav-inner">
             <a href="./landing.html" class="logo">
-                <div class="logo-icon">AI</div>
-                <span class="logo-text">Portfolio <span>Pro</span></span>
+                <div class="logo-icon">AV</div>
+                <span class="logo-text">Ansh <span>Verma</span></span>
             </a>
-            <a href="./index.html" class="nav-cta"><i class="fas fa-magic"></i> Start Building Free</a>
+            <div id="nav-links-container" class="nav-links" style="display:flex; gap:20px; align-items:center;">
+                <!-- Initial static links - will be swapped by JS if logged in -->
+                <a id="login-link" href="./login.html" style="color:rgba(255,255,255,0.6); text-decoration:none; font-size:0.85rem; font-weight:600; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Log In</a>
+                <a id="signup-link" href="./signup.html" style="color:rgba(255,255,255,0.6); text-decoration:none; font-size:0.85rem; font-weight:600; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.6)'">Sign Up</a>
+                <a href="./index.html" class="nav-cta"><i class="fas fa-magic"></i> Start Building Free</a>
+            </div>
         </div>
     </nav>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+        const SUPABASE_URL = 'https://mkuzksoyetgxjsycfnnx.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_seUTej9kixmVRZgvtugmXw__p2MUoU1';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function checkAuth() {
+            const { data: { session } } = await supabase.auth.getSession();
+            const isGuest = localStorage.getItem('guestMode') === 'true';
+
+            if (session || isGuest) {
+                const container = document.getElementById('nav-links-container');
+                const loginLink = document.getElementById('login-link');
+                const signupLink = document.getElementById('signup-link');
+                
+                if (loginLink) loginLink.remove();
+                if (signupLink) signupLink.remove();
+                
+                const dashboardBtn = document.createElement('a');
+                dashboardBtn.href = './index.html';
+                dashboardBtn.style.color = 'rgba(255,255,255,0.6)';
+                dashboardBtn.style.textDecoration = 'none';
+                dashboardBtn.style.fontSize = '0.85rem';
+                dashboardBtn.style.fontWeight = '600';
+                dashboardBtn.innerHTML = '<i class="fas fa-th-large mr-1 opacity-50"></i> Go to Dashboard';
+                container.prepend(dashboardBtn);
+            }
+        }
+        checkAuth();
+    </script>
 
     <!-- Hero -->
     <div class="hero container reveal">
@@ -144,7 +180,7 @@
             <div class="reveal">
                 <div class="section-label">What You Get</div>
                 <h2 class="section-title">Everything a modern<br>portfolio needs</h2>
-                <p class="section-sub">From AI-generated bios to one-click GitHub README exports, AI Portfolio Pro has you covered.</p>
+                <p class="section-sub">From AI-generated bios to one-click GitHub README exports, Ansh Verma has you covered.</p>
             </div>
             <div class="feature-grid reveal">
                 <div class="feature-card">
@@ -283,7 +319,7 @@
 
     <!-- Footer -->
     <footer>
-        <span>© 2026 <a href="./landing.html">AI Portfolio Pro</a> · Built with ❤️ and AI</span>
+        <span>© 2026 <a href="./landing.html">Ansh Verma</a> · Built with ❤️ and AI</span>
     </footer>
 
     <script>

@@ -12,13 +12,13 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert(error.message);
     else {
-        localStorage.removeItem('guest_mode');
+        localStorage.removeItem('guestMode');
         window.location.href = 'index.html';
     }
 });
 
 document.getElementById('guest-btn').addEventListener('click', () => {
-    localStorage.setItem('guest_mode', 'true');
+    localStorage.setItem('guestMode', 'true');
     window.location.href = 'index.html';
 });
 

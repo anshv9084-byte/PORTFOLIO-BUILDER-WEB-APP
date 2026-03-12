@@ -18,7 +18,7 @@ document.getElementById('signup-form').addEventListener('submit', async (e) => {
 });
 
 document.getElementById('guest-btn').addEventListener('click', () => {
-    localStorage.setItem('guest_mode', 'true');
+    localStorage.setItem('guestMode', 'true');
     window.location.href = 'index.html';
 });
 

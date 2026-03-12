@@ -7,62 +7,6 @@ const SUPABASE_KEY = 'sb_publishable_seUTej9kixmVRZgvtugmXw__p2MUoU1';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- AUTH CHECK ---// Call this on load to check if user is returning
-async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-        currentUser = user;
-        console.log('User signed in:', user.email);
-        
-        // Unhide the My Portfolios panel layout (it will just be empty if no saves)
-        myPortfoliosPanel.classList.remove('hidden');
-        loadSavedPortfolios();
-        
-        // Auto-fill some form data if they have a saved profile
-        const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-        if (profile) {
-            if(profile.name) document.getElementById('name').value = profile.name;
-            if(profile.title) document.getElementById('role').value = profile.title;
-            if(profile.github_url) document.getElementById('github').value = profile.github_url;
-            
-            // Also enable the save/publish buttons
-            saveBtn.disabled = false;
-            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    } else {
-        // If no user and not guest, redirect to login
-        if (localStorage.getItem('guestMode') !== 'true') {
-            window.location.href = './login.html';
-        } else {
-            // Guest mode
-            console.log("Running in Ghost Mode (Guest)");
-            myPortfoliosPanel.classList.add('hidden'); // Ensure hidden for guests
-        }
-    }
-}
-checkUser();
-
-// --- STATE MANAGEMENT ---
-let currentStep = 1;
-let currentTheme = 'developer';
-let currentAccentColor = '#00D9FF';
-let currentFont = 'clash';
-let generatedContent = null;
-let currentUser = null;
-let lastFormData = {}; // persisted so renderPortfolio can access it
-
-// --- PREPARE USER ---
-async function fetchUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    currentUser = user;
-}
-fetchUser();
-
 // --- DOM ELEMENTS ---
 const portfolioForm = document.getElementById('portfolio-form');
 const steps = [
@@ -94,7 +38,121 @@ const myPortfoliosPanel = document.getElementById('my-portfolios-panel');
 const portfoliosCount = document.getElementById('portfolios-count');
 const portfoliosList = document.getElementById('portfolios-list');
 const saveBtn = document.getElementById('save-btn');
+const themeToggleBtn = document.getElementById('theme-toggle');
+const mobileThemeToggleBtn = document.getElementById('mobile-theme-toggle');
 let savedPortfolios = [];
+
+// Contrast helper: returns 'black' or 'white' based on hex background
+function getContrastColor(hexcolor) {
+    if (!hexcolor) return 'white';
+    // If it's rgb(...) format, extract hex or handle directly
+    if (hexcolor.startsWith('rgb')) {
+        const rgb = hexcolor.match(/\d+/g);
+        if (!rgb || rgb.length < 3) return 'white';
+        const yiq = ((rgb[0] * 299) + (rgb[1] * 587) + (rgb[2] * 114)) / 1000;
+        return (yiq >= 128) ? 'black' : 'white';
+    }
+    
+    const hex = hexcolor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? 'black' : 'white';
+}
+
+// Helper to convert hex to RGB for Tailwind opacity support
+function hexToRgb(hex) {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? 
+        `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+        null;
+}
+
+// --- STATE MANAGEMENT ---
+let currentStep = 1;
+let currentTheme = 'developer';
+let currentAccentColor = '#00D9FF';
+document.documentElement.style.setProperty('--accent-rgb', hexToRgb(currentAccentColor));
+let currentFont = 'clash';
+let generatedContent = null;
+let currentUser = null;
+let lastFormData = {}; // persisted so renderPortfolio can access it
+
+// --- PREPARE USER ---
+async function fetchUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    currentUser = user;
+
+    // Check for Guest Mode if no Supabase user
+    if (!currentUser && localStorage.getItem('guestMode') === 'true') {
+        currentUser = { 
+            id: 'guest',
+            email: 'guest@anshverma.dev', 
+            isGuest: true 
+        };
+    }
+
+    // Refresh UI and Load Data
+    handleAuthUI();
+    if (currentUser && !currentUser.isGuest) {
+        loadSavedPortfolios();
+    }
+}
+fetchUser();
+
+// --- AUTH UI HANDLER ---
+function handleAuthUI() {
+    const authContainer = document.getElementById('auth-container');
+    if (!authContainer) return;
+
+    if (currentUser) {
+        authContainer.innerHTML = `
+            <div class="relative group">
+                <button id="user-menu-btn" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-slate-200 dark:border-white/10 rounded-full hover:bg-white/10 transition-all">
+                    <div class="w-5 h-5 bg-accent rounded-full flex items-center justify-center text-[10px] font-bold text-black">
+                        ${currentUser.email[0].toUpperCase()}
+                    </div>
+                    <span class="text-[10px] font-medium text-slate-600 dark:text-slate-400 max-w-[80px] truncate">${currentUser.email}</span>
+                    <i class="fas fa-chevron-down text-[8px] opacity-40"></i>
+                </button>
+                <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white dark:bg-[#1A1A24] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl py-2 hidden z-50">
+                    <div class="px-4 py-2 border-b border-slate-100 dark:border-white/5 mb-1">
+                        <p class="text-[10px] text-slate-400">Signed in as</p>
+                        <p class="text-xs font-semibold truncate">${currentUser.email}</p>
+                    </div>
+                    <button id="logout-btn" class="w-full text-left px-4 py-2 text-xs text-red-500 hover:bg-red-500/5 transition-all flex items-center gap-2">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Toggle dropdown
+        const menuBtn = document.getElementById('user-menu-btn');
+        const dropdown = document.getElementById('user-dropdown');
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', () => dropdown.classList.add('hidden'));
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            if (currentUser && currentUser.isGuest) {
+                localStorage.removeItem('guestMode');
+            } else {
+                await supabase.auth.signOut();
+            }
+            window.location.href = './landing.html';
+        });
+    } else {
+        authContainer.innerHTML = `
+            <a href="./login.html" class="px-4 py-1.5 bg-accent text-black rounded-full text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-accent/20">Log In</a>
+        `;
+    }
+}
+
 
 // --- COLOR & FONT PICKERS ---
 document.querySelectorAll('.color-swatch').forEach(swatch => {
@@ -103,6 +161,7 @@ document.querySelectorAll('.color-swatch').forEach(swatch => {
         swatch.classList.add('active');
         currentAccentColor = swatch.dataset.color;
         document.documentElement.style.setProperty('--accent', currentAccentColor);
+        document.documentElement.style.setProperty('--accent-rgb', hexToRgb(currentAccentColor));
         // update any existing preview
         if (generatedContent) renderPortfolio();
     });
@@ -131,6 +190,45 @@ const revealObserver = new IntersectionObserver((entries) => {
     });
 }, { threshold: 0.1 });
 document.querySelectorAll('.scroll-reveal').forEach(el => revealObserver.observe(el));
+
+// --- THEME TOGGLE LOGIC ---
+function updateThemeToggleUI() {
+    const icon = themeToggleBtn.querySelector('i');
+    const isDark = document.documentElement.classList.contains('dark');
+    if (isDark) {
+        icon.className = 'fas fa-sun text-xs';
+        themeToggleBtn.title = 'Switch to Light Mode';
+    } else {
+        icon.className = 'fas fa-moon text-xs';
+        themeToggleBtn.title = 'Switch to Dark Mode';
+    }
+}
+
+themeToggleBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    localStorage.theme = isDark ? 'dark' : 'light';
+    
+    // Update dashboard colors based on mode
+    if (isDark) {
+        document.body.classList.add('bg-[#0A0A0F]', 'text-white');
+        document.body.classList.remove('bg-slate-50', 'text-slate-900');
+    } else {
+        document.body.classList.remove('bg-[#0A0A0F]', 'text-white');
+        document.body.classList.add('bg-slate-50', 'text-slate-900');
+    }
+    
+    updateThemeToggleUI();
+});
+
+if (mobileThemeToggleBtn) {
+    mobileThemeToggleBtn.addEventListener('click', () => {
+        themeToggleBtn.click(); // Reuse main toggle logic
+    });
+}
+
+// Sync UI on load
+updateThemeToggleUI();
 
 
 
@@ -228,7 +326,18 @@ function updateSteps() {
 }
 
 nextBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Trigger HTML5 validation on current step inputs
+        const currentStepEl = document.getElementById(`step-${currentStep}`);
+        const inputs = Array.from(currentStepEl.querySelectorAll('input[required], textarea[required]'));
+        const isValid = inputs.every(input => input.checkValidity());
+        
+        if (!isValid) {
+            inputs.forEach(input => input.reportValidity());
+            return;
+        }
+
         if (currentStep < steps.length) {
             currentStep++;
             updateSteps();
@@ -237,7 +346,8 @@ nextBtns.forEach(btn => {
 });
 
 prevBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
         if (currentStep > 1) {
             currentStep--;
             updateSteps();
@@ -250,7 +360,7 @@ portfolioForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     // Gather manual inputs
-    lastFormData = {
+    const formData = {
         name: document.getElementById('name').value,
         role: document.getElementById('role').value,
         tagline: document.getElementById('tagline-input')?.value || '',
@@ -332,6 +442,7 @@ async function savePortfolioToDatabase(formData, content) {
             .from('users')
             .upsert({
                 id: userId,
+                email: user.email,
                 username: username,
                 name: formData.name,
                 title: formData.role,
@@ -350,9 +461,12 @@ async function savePortfolioToDatabase(formData, content) {
 
 // --- DEMO DATA FALLBACK ---
 function getDemoData(info) {
-    const skillList = info.skills.split(',').map(s => s.trim()).filter(Boolean);
-    const projectList = (info.projects || 'Awesome Project, NextGen App').split(',').map(p => p.trim()).filter(Boolean);
-    const experienceList = info.experience ? info.experience.split('\n').map(e => e.trim()).filter(Boolean) : [];
+    const skillStr = info.skills ? String(info.skills) : 'HTML, CSS, JavaScript';
+    const skillList = skillStr.split(',').map(s => s.trim()).filter(Boolean);
+    const projStr = info.projects ? String(info.projects) : 'Awesome Project, NextGen App';
+    const projectList = projStr.split(',').map(p => p.trim()).filter(Boolean);
+    const expStr = info.experience ? String(info.experience) : '';
+    const experienceList = expStr ? expStr.split('\n').map(e => e.trim()).filter(Boolean) : [];
     return {
         tagline: `Crafting high-performance ${info.role} experiences with precision & creative flair.`,
         about: `I'm a passionate ${info.role} who transforms complex challenges into elegant, user-centric solutions. With deep expertise in ${skillList.slice(0, 3).join(', ')}, I build scalable products that people love. I care deeply about clean code, great design, and shipping fast.`,
@@ -538,7 +652,7 @@ function renderPortfolio() {
         const experience = generatedContent.experience || [];
 
         html = `
-        <div class="portfolio-root font-mono text-white bg-[#070710] min-h-screen" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+        <div class="portfolio-root font-mono text-white bg-[#070710] min-h-screen" style="--accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <!-- HERO -->
             <div class="portfolio-hero relative overflow-hidden">
                 <!-- Background image with overlay -->
@@ -566,7 +680,7 @@ function renderPortfolio() {
                             `<div class="w-24 h-24 rounded-2xl overflow-hidden border-2 border-accent/40 shadow-[0_0_30px_rgba(var(--accent-rgb),0.3)] hover:scale-105 transition-transform duration-500">
                                 <img src="${photo}" class="w-full h-full object-cover" alt="${name}">
                              </div>` :
-                            `<div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-black text-3xl font-bold shadow-[0_0_30px_rgba(var(--accent-rgb),0.4)] flex-shrink-0 hover:rotate-3 transition-transform">
+                            `<div class="w-24 h-24 rounded-2xl bg-gradient-to-br from-accent to-blue-500 flex items-center justify-center text-${getContrastColor(currentAccentColor)} text-3xl font-bold shadow-[0_0_30px_rgba(var(--accent-rgb),0.4)] flex-shrink-0 hover:rotate-3 transition-transform">
                                 ${initials}
                              </div>`
                         }
@@ -583,7 +697,7 @@ function renderPortfolio() {
                     
                     <!-- CTA Row -->
                     <div class="flex gap-4 flex-wrap animate-fade-in-up" style="animation-delay: 0.5s">
-                        <a href="#projects" class="inline-flex items-center gap-2 px-8 py-3.5 bg-accent text-black rounded-xl font-bold hover:scale-105 transition-transform shadow-[0_10px_30px_rgba(var(--accent-rgb),0.3)] text-sm pulse-btn">
+                        <a href="#projects" class="inline-flex items-center gap-2 px-8 py-3.5 bg-accent text-${getContrastColor(currentAccentColor)} rounded-xl font-bold hover:scale-105 transition-transform shadow-[0_10px_30px_rgba(var(--accent-rgb),0.3)] text-sm pulse-btn">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             View Projects
                         </a>
@@ -716,7 +830,7 @@ function renderPortfolio() {
         const experience = generatedContent.experience || [];
         
         html = `
-        <div class="portfolio-root font-sans bg-white text-[#111] min-h-screen pb-0" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+        <div class="portfolio-root font-sans bg-white text-[#111] min-h-screen pb-0" style="--accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <!-- Navigation -->
             <nav class="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-slate-100 px-12 py-5 flex items-center justify-between">
                 <div class="font-black text-xl tracking-tighter">${initials}</div>
@@ -883,7 +997,7 @@ function renderPortfolio() {
     // ═══════════════════════════════════════════════
     } else if (currentTheme === 'creative') {
         html = `
-        <div class="portfolio-root text-white min-h-screen pb-20" style="background:linear-gradient(135deg,#06060F 0%,#0E0720 50%,#06060F 100%); --accent: ${currentAccentColor}; ${selectedFontStyle}">
+        <div class="portfolio-root text-white min-h-screen pb-20" style="background:linear-gradient(135deg,#06060F 0%,#0E0720 50%,#06060F 100%); --accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <!-- Ambient blobs -->
             <div class="fixed top-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,217,255,0.08),transparent 70%);transform:translate(-30%,-30%)"></div>
             <div class="fixed bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(139,92,246,0.1),transparent 70%);transform:translate(30%,30%)"></div>
@@ -1022,7 +1136,7 @@ function renderPortfolio() {
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Get In Touch
                     </a>
-                    <p class="text-white/15 text-xs mt-12">© ${new Date().getFullYear()} ${name} · AI Portfolio Pro</p>
+                    <p class="text-white/15 text-xs mt-12">© ${new Date().getFullYear()} ${name} · Ansh Verma</p>
                 </div>
             </div>
         </div>`;
@@ -1036,7 +1150,7 @@ function renderPortfolio() {
         const linkedin = document.getElementById('linkedin')?.value || '';
         
         html = `
-        <div class="portfolio-root font-sans bg-white text-zinc-900 min-h-screen px-6 py-12 md:px-20 md:py-32" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+        <div class="portfolio-root font-sans bg-white text-zinc-900 min-h-screen px-6 py-12 md:px-20 md:py-32" style="--accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <div class="max-w-3xl mx-auto">
                 <!-- Header -->
                 <header class="portfolio-hero mb-24">
@@ -1104,7 +1218,7 @@ function renderPortfolio() {
         const experience = generatedContent.experience || [];
 
         html = `
-        <div class="portfolio-root font-serif bg-[#fdfdfd] text-[#222] min-h-screen p-8 md:p-16" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
+        <div class="portfolio-root font-serif bg-[#fdfdfd] text-[#222] min-h-screen p-8 md:p-16" style="--accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <div class="max-w-4xl mx-auto bg-white shadow-[0_0_50px_rgba(0,0,0,0.03)] border border-zinc-100 p-10 md:p-20 relative animate-fade-in">
                 <!-- Decor Line -->
                 <div class="absolute top-0 left-0 w-full h-1.5 bg-zinc-900"></div>
@@ -1201,7 +1315,7 @@ function renderPortfolio() {
     if (currentTheme === 'bold') {
         const accent = currentAccentColor;
         html = `
-        <div class="portfolio-root" style="background:#000;color:#fff;min-height:100vh;${selectedFontStyle}">
+        <div class="portfolio-root" style="background:#000;color:#fff;min-height:100vh; --accent: ${currentAccentColor}; --accent-rgb: ${hexToRgb(currentAccentColor)}; ${selectedFontStyle}">
             <!-- HERO BANNER -->
             <div class="portfolio-hero" style="padding:0;position:relative;overflow:hidden">
                 <div style="background:${accent};padding:48px 48px 64px;min-height:300px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end">
@@ -1264,8 +1378,8 @@ function renderPortfolio() {
 
             <!-- FOOTER -->
             <div style="background:${accent};padding:40px 48px;display:flex;align-items:center;justify-content:space-between">
-                <span style="font-size:1.5rem;font-weight:900;color:#000;letter-spacing:-1px">${name}</span>
-                ${lastFormData?.email ? `<a href="mailto:${lastFormData.email}" style="color:#000;font-weight:700;text-decoration:none;font-size:0.85rem">${lastFormData.email}</a>` : `<span style="color:rgba(0,0,0,0.5);font-size:0.8rem">© ${new Date().getFullYear()}</span>`}
+                <span style="font-size:1.5rem;font-weight:900;color:${getContrastColor(accent)};letter-spacing:-1px">${name}</span>
+                ${lastFormData?.email ? `<a href="mailto:${lastFormData.email}" style="color:${getContrastColor(accent)};font-weight:700;text-decoration:none;font-size:0.85rem">${lastFormData.email}</a>` : `<span style="color:${getContrastColor(accent)};opacity:0.5;font-size:0.8rem">© ${new Date().getFullYear()}</span>`}
             </div>
         </div>`;
     }
@@ -1447,7 +1561,7 @@ ${projectSection}
 
 <div align="center">
 
-*Built with [AI Portfolio Pro](https://github.com/ai-portfolio-pro)*
+*Built with [Ansh Verma](https://github.com/ansh-verma)*
 
 </div>
 `;
@@ -1460,6 +1574,72 @@ ${projectSection}
     a.click();
     URL.revokeObjectURL(url);
 });
+
+// --- DATABASE SYNC ---
+async function loadSavedPortfolios() {
+    if (!currentUser) return;
+    try {
+        const { data, error } = await supabase
+            .from('saved_portfolios')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        savedPortfolios = data || [];
+        renderSavedPortfoliosList();
+    } catch (e) {
+        console.warn("Could not load saved portfolios:", e.message);
+    }
+}
+
+function renderSavedPortfoliosList() {
+    if (!portfoliosList) return;
+    
+    portfoliosCount.textContent = savedPortfolios.length;
+    
+    if (savedPortfolios.length === 0) {
+        portfoliosList.innerHTML = `
+            <div class="text-center py-10 border-2 border-dashed border-white/5 rounded-2xl">
+                <p class="text-white/20 text-xs">No saved versions yet</p>
+            </div>`;
+        return;
+    }
+
+    portfoliosList.innerHTML = savedPortfolios.map(p => `
+        <div class="group bg-white/5 border border-white/5 p-4 rounded-xl hover:bg-white/10 transition-all cursor-pointer" onclick="loadSavedVersion('${p.id}')">
+            <div class="flex justify-between items-start mb-1">
+                <h4 class="font-bold text-sm truncate pr-4">${p.name}</h4>
+                <div class="text-[9px] text-white/30 whitespace-nowrap">${new Date(p.created_at).toLocaleDateString()}</div>
+            </div>
+            <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="text-[9px] text-accent font-bold uppercase tracking-widest">Load Version</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Global exposure for onclick
+window.loadSavedVersion = async function(id) {
+    const p = savedPortfolios.find(x => x.id === id);
+    if (!p) return;
+    
+    // Switch to preview mode
+    switchToPreview();
+    
+    // Load content
+    previewEmpty.classList.add('hidden');
+    previewContent.classList.remove('hidden', 'opacity-20');
+    previewContent.innerHTML = p.html_content;
+    codeEditor.value = p.html_content;
+    generatedContent = { restored: true }; // Dummy to enable buttons
+    
+    // Re-enable dashboard buttons
+    document.querySelectorAll('#download-btn, #readme-btn, #save-btn, #share-btn').forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('opacity-40', 'cursor-not-allowed');
+    });
+};
 
 
 

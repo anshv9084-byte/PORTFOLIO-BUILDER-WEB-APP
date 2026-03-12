@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Portfolio Pro | Create Your Identity</title>
+    <title>Ansh Verma | Create Your Identity</title>
     <meta name="description" content="Build a stunning professional portfolio in minutes with AI. Choose a template, enter your info, and get a fully generated portfolio instantly.">
     <!-- Theme init - prevents flash of wrong theme -->
     <script>
@@ -34,50 +34,71 @@
         <p class="text-white/50 text-sm leading-relaxed max-w-xs mb-8">
             The Portfolio Builder requires a larger screen to display the live code editor and preview pane side-by-side. 
         </p>
-        <p class="text-white/80 font-semibold text-sm bg-white/5 px-6 py-3 rounded-xl border border-white/10">
+        <p class="text-white/80 font-semibold text-sm bg-white/5 px-6 py-3 rounded-xl border border-slate-200 dark:border-white/10">
             Please switch to a computer or enable "Desktop Site" in your mobile browser settings.
         </p>
     </div>
 
     <div id="app" class="min-h-screen flex flex-col relative z-10 hidden lg:flex">
         <!-- Header -->
-        <header class="min-h-16 border-b border-white/8 flex flex-wrap items-center justify-between px-4 lg:px-8 py-3 lg:py-0 bg-[#0D0D14]/90 backdrop-blur-xl z-20 gap-3">
-            <a href="./landing.html" class="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-                <div class="w-8 h-8 bg-gradient-to-br from-accent to-purple-500 rounded-lg flex items-center justify-center text-black font-bold text-sm shadow-[0_0_16px_rgba(0,217,255,0.4)]">AI</div>
-                <h1 class="text-xl font-clash font-semibold">Portfolio <span class="text-accent">Pro</span></h1>
-            </a>
-            <div class="flex items-center gap-2 flex-wrap">
-                <!-- Template Selector -->
-                <div id="theme-selector" class="flex bg-white/5 p-0.5 rounded-full border border-white/10 overflow-x-auto no-scrollbar">
-                    <button data-theme="developer" class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all bg-accent text-black">Developer</button>
-                    <button data-theme="startup"   class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Startup</button>
-                    <button data-theme="creative"  class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Creative</button>
-                    <button data-theme="minimal"   class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Minimal</button>
-                    <button data-theme="bold"      class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Bold</button>
-                    <button data-theme="resume"    class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Resume</button>
+        <header class="h-auto lg:h-16 border-b border-slate-200 dark:border-white/8 flex flex-col lg:flex-row items-center justify-between px-4 lg:px-8 py-3 lg:py-0 bg-white dark:bg-[#0D0D14]/90 backdrop-blur-xl z-[100] gap-4 lg:gap-0">
+            <!-- Left: Logo -->
+            <div class="flex items-center w-full lg:w-auto justify-between lg:justify-start">
+                <a href="./landing.html" class="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+                    <div class="w-8 h-8 bg-gradient-to-br from-accent to-purple-500 rounded-lg flex items-center justify-center text-black font-bold text-sm shadow-[0_0_16px_rgba(var(--accent-rgb),0.4)]">AV</div>
+                    <h1 class="text-lg lg:text-xl font-clash font-semibold text-slate-900 dark:text-white">Ansh <span class="text-accent">Verma</span></h1>
+                </a>
+                
+                <!-- Mobile Only Controls (Simple theme toggle) -->
+                <button id="mobile-theme-toggle" class="lg:hidden w-8 h-8 flex items-center justify-center bg-white/5 border border-slate-200 dark:border-white/10 rounded-full text-white/50">
+                    <i class="fas fa-moon text-[10px]"></i>
+                </button>
+            </div>
+
+            <!-- Center: Template Selector -->
+            <div class="flex items-center justify-center overflow-x-auto no-scrollbar w-full lg:w-auto px-2 lg:px-0">
+                <div id="theme-selector" class="flex bg-slate-100 dark:bg-white/5 p-0.5 rounded-full border border-slate-200 dark:border-white/10 flex-shrink-0">
+                    <button data-theme="developer" class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all bg-accent text-black whitespace-nowrap">Developer</button>
+                    <button data-theme="startup"   class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5 whitespace-nowrap">Startup</button>
+                    <button data-theme="creative"  class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5 whitespace-nowrap">Creative</button>
+                    <button data-theme="minimal"   class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5 whitespace-nowrap">Minimal</button>
+                    <button data-theme="bold"      class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5 whitespace-nowrap">Bold</button>
+                    <button data-theme="resume"    class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5 whitespace-nowrap">Resume</button>
                 </div>
-                <button id="download-btn" class="btn-ghost text-xs px-3 py-2 opacity-40 cursor-not-allowed" disabled>
-                    <i class="fas fa-download mr-1"></i> Export
+            </div>
+
+            <!-- Right: Actions & Auth -->
+            <div class="flex items-center gap-2 lg:gap-3 w-full lg:w-auto justify-center lg:justify-end">
+                <button id="theme-toggle" class="hidden lg:flex w-9 h-9 items-center justify-center bg-white/5 border border-slate-200 dark:border-white/10 rounded-full hover:bg-white/10 transition-all text-white/50 hover:text-white" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon text-xs"></i>
                 </button>
-                <button id="readme-btn" class="btn-ghost text-xs px-3 py-2 opacity-40 cursor-not-allowed" disabled title="Export as GitHub README.md">
-                    <i class="fab fa-github mr-1"></i> README
-                </button>
-                <button id="save-btn" class="btn-ghost text-xs px-3 py-2 opacity-40 cursor-not-allowed text-accent" disabled>
-                    <i class="fas fa-save mr-1"></i> Save
-                </button>
-                <button id="share-btn" class="bg-accent text-black px-4 py-2 rounded-full text-xs font-semibold hover:scale-105 transition-transform opacity-40 cursor-not-allowed" disabled>
-                    Publish
-                </button>
+                
+                <div id="auth-container" class="relative z-[110]">
+                    <!-- Dynamic Auth Content via JS -->
+                    <a href="./login.html" class="px-4 py-1.5 bg-accent text-black rounded-full text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-accent/20">Log In</a>
+                </div>
+
+                <div class="flex items-center gap-1.5 border-l border-slate-200 dark:border-white/10 pl-2 lg:pl-3 ml-1 lg:ml-0">
+                    <button id="download-btn" class="w-8 h-8 lg:w-auto lg:px-3 flex items-center justify-center lg:btn-ghost text-[10px] lg:text-xs opacity-40 cursor-not-allowed" disabled title="Export HTML">
+                        <i class="fas fa-download lg:mr-1"></i> <span class="hidden lg:inline">Export</span>
+                    </button>
+                    <button id="save-btn" class="w-8 h-8 lg:w-auto lg:px-3 flex items-center justify-center lg:btn-ghost text-[10px] lg:text-xs opacity-40 cursor-not-allowed text-accent" disabled title="Save to Cloud">
+                        <i class="fas fa-save lg:mr-1"></i> <span class="hidden lg:inline">Save</span>
+                    </button>
+                    <button id="share-btn" class="bg-accent text-black px-3 lg:px-4 py-1.5 lg:py-2 rounded-full text-[10px] lg:text-xs font-semibold hover:scale-105 transition-transform opacity-40 cursor-not-allowed" disabled>
+                        Publish
+                    </button>
+                </div>
             </div>
         </header>
 
         <!-- Main Content (Two Panes) -->
         <main class="flex-1 flex flex-col lg:flex-row overflow-x-hidden overflow-y-auto lg:overflow-hidden">
             <!-- Left Pane: Input Form -->
-            <aside class="w-full lg:w-[460px] border-b lg:border-b-0 lg:border-r border-white/8 bg-[#0D0D14] p-6 lg:p-8 flex-shrink-0 lg:overflow-y-auto z-10 custom-scrollbar">
+            <aside class="w-full lg:w-[460px] border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-200 dark:border-white/8 bg-slate-50 dark:bg-[#0D0D14] p-6 lg:p-8 flex-shrink-0 lg:overflow-y-auto z-10 custom-scrollbar text-slate-900 dark:text-white">
                 <div class="mb-6">
-                    <h2 class="text-2xl font-clash font-bold mb-1">Build Your Portfolio</h2>
-                    <p class="text-white/40 text-sm">Fill in your details — AI handles the rest.</p>
+                    <h2 class="text-2xl font-clash font-bold mb-1 text-slate-900 dark:text-white">Build Your Portfolio</h2>
+                    <p class="text-slate-500 dark:text-slate-500 dark:text-white/40 text-sm">Fill in your details — AI handles the rest.</p>
                 </div>
 
                 <!-- Stepper -->
@@ -90,19 +111,19 @@
                     <!-- Step 1: Core Identity -->
                     <div id="step-1" class="step-content space-y-6">
                         <div class="space-y-2">
-                            <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Full Name</label>
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Full Name</label>
                             <input type="text" id="name" placeholder="Alex Rivera" class="form-input" required>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Current Role</label>
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Current Role</label>
                             <input type="text" id="role" placeholder="Senior Product Designer" class="form-input" required>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Headline Hook</label>
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Headline Hook</label>
                             <input type="text" id="tagline-input" placeholder="Crafting digital experiences that define industries." class="form-input">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[10px] font-bold text-white/40 uppercase tracking-widest ml-1">Prime Skills (Comma separated)</label>
+                            <label class="text-[10px] font-bold text-slate-500 dark:text-white/40 uppercase tracking-widest ml-1">Prime Skills (Comma separated)</label>
                             <input type="text" id="skills" placeholder="React, UI/UX, Node.js, Strategy" class="form-input" required>
                         </div>
                         <button type="button" class="next-step w-full py-4 bg-white text-black rounded-xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(0,0,0,0.2)]">
@@ -113,47 +134,47 @@
                     <!-- Step 2: Contact & Links -->
                     <div id="step-2" class="step-content space-y-5 hidden">
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">Profile Photo URL <span class="text-white/25 normal-case tracking-normal">(optional)</span></label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">Profile Photo URL <span class="text-white/25 normal-case tracking-normal">(optional)</span></label>
                             <input type="url" id="photo-url" placeholder="https://example.com/photo.jpg" class="form-input">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">Email Address</label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">Email Address</label>
                             <input type="email" id="email" placeholder="alex@example.com" class="form-input">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">GitHub Username</label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">GitHub Username</label>
                             <input type="text" id="github" placeholder="alexjohnson" class="form-input">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">LinkedIn URL <span class="text-white/25 normal-case tracking-normal">(optional)</span></label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">LinkedIn URL <span class="text-white/25 normal-case tracking-normal">(optional)</span></label>
                             <input type="text" id="linkedin" placeholder="linkedin.com/in/alexjohnson" class="form-input">
                         </div>
                         <div class="flex gap-3">
-                            <button type="button" class="prev-step flex-1 border border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
-                            <button type="button" class="next-step flex-[2] bg-white/8 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-semibold transition-all">Continue <i class="fas fa-arrow-right ml-2 text-accent"></i></button>
+                            <button type="button" class="prev-step flex-1 border border-slate-200 dark:border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
+                            <button type="button" class="next-step flex-[2] bg-white/8 hover:bg-white/15 border border-slate-200 dark:border-white/10 py-3 rounded-xl font-semibold transition-all">Continue <i class="fas fa-arrow-right ml-2 text-accent"></i></button>
                         </div>
                     </div>
 
                     <!-- Step 3: Projects -->
                     <div id="step-3" class="step-content space-y-5 hidden">
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">Work Experience <span class="text-white/25 normal-case tracking-normal">(optional, use newlines)</span></label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">Work Experience <span class="text-white/25 normal-case tracking-normal">(optional, use newlines)</span></label>
                             <textarea id="experience" placeholder="Sr. Developer at TechCorp (2020-Present)&#10;Web Developer at StartUp (2018-2020)" class="form-input h-20"></textarea>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-2">Top Projects <span class="text-white/25 normal-case tracking-normal">(comma separated)</span></label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-2">Top Projects <span class="text-white/25 normal-case tracking-normal">(comma separated)</span></label>
                             <textarea id="projects" placeholder="E-commerce site, Habit Tracker app, Portfolio Builder..." class="form-input h-20"></textarea>
                         </div>
                         <div class="flex gap-3">
-                            <button type="button" class="prev-step flex-1 border border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
-                            <button type="button" class="next-step flex-[2] bg-white/8 hover:bg-white/15 border border-white/10 py-3 rounded-xl font-semibold transition-all">Continue <i class="fas fa-arrow-right ml-2 text-accent"></i></button>
+                            <button type="button" class="prev-step flex-1 border border-slate-200 dark:border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
+                            <button type="button" class="next-step flex-[2] bg-white/8 hover:bg-white/15 border border-slate-200 dark:border-white/10 py-3 rounded-xl font-semibold transition-all">Continue <i class="fas fa-arrow-right ml-2 text-accent"></i></button>
                         </div>
                     </div>
 
                     <!-- Step 4: Customize & Generate -->
                     <div id="step-4" class="step-content space-y-6 hidden">
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-3">Accent Color</label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-3">Accent Color</label>
                             <div id="color-picker" class="flex gap-3 flex-wrap">
                                 <div class="color-swatch active" style="background:#00D9FF" data-color="#00D9FF" title="Cyan"></div>
                                 <div class="color-swatch" style="background:#818CF8" data-color="#818CF8" title="Indigo"></div>
@@ -165,15 +186,15 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] font-semibold text-white/40 uppercase tracking-widest mb-3">Font Style</label>
+                            <label class="block text-[10px] font-semibold text-slate-500 dark:text-white/40 uppercase tracking-widest mb-3">Font Style</label>
                             <div id="font-picker" class="grid grid-cols-3 gap-2 text-center">
                                 <button type="button" data-font="clash" class="font-option px-3 py-2.5 rounded-xl border border-accent/50 bg-accent/10 text-xs font-semibold text-accent">Clash <span class="block text-[10px] text-accent/60 font-normal">Modern</span></button>
-                                <button type="button" data-font="inter" class="font-option px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold hover:border-white/20 transition-all" style="font-family:'Inter',sans-serif">Inter <span class="block text-[10px] text-white/40 font-normal">Clean</span></button>
-                                <button type="button" data-font="mono" class="font-option px-3 py-2.5 rounded-xl border border-white/10 bg-white/5 text-xs font-semibold hover:border-white/20 transition-all" style="font-family:monospace">Mono <span class="block text-[10px] text-white/40 font-normal">Code</span></button>
+                                <button type="button" data-font="inter" class="font-option px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/5 text-xs font-semibold hover:border-white/20 transition-all" style="font-family:'Inter',sans-serif">Inter <span class="block text-[10px] text-slate-500 dark:text-white/40 font-normal">Clean</span></button>
+                                <button type="button" data-font="mono" class="font-option px-3 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white/5 text-xs font-semibold hover:border-white/20 transition-all" style="font-family:monospace">Mono <span class="block text-[10px] text-slate-500 dark:text-white/40 font-normal">Code</span></button>
                             </div>
                         </div>
                         <div class="flex gap-3">
-                            <button type="button" class="prev-step flex-1 border border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
+                            <button type="button" class="prev-step flex-1 border border-slate-200 dark:border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
                             <button id="generate-btn" type="submit" class="flex-[2] bg-accent text-black py-3 rounded-xl font-bold hover:scale-[1.02] transition-transform">
                                 <i class="fas fa-magic mr-2"></i>Generate via AI
                             </button>
@@ -187,13 +208,13 @@
                         <div class="loading-spinner flex-shrink-0"></div>
                         <div>
                             <h4 class="text-sm font-semibold text-accent">AI is generating...</h4>
-                            <p class="text-xs text-white/40 mt-0.5">Crafting your professional bio and descriptions.</p>
+                            <p class="text-xs text-slate-500 dark:text-white/40 mt-0.5">Crafting your professional bio and descriptions.</p>
                         </div>
                     </div>
                 </div>
 
                 <!-- My Portfolios Panel -->
-                <div id="my-portfolios-panel" class="mt-10 pt-8 border-t border-white/8 hidden">
+                <div id="my-portfolios-panel" class="mt-10 pt-8 border-t border-slate-200 dark:border-white/8 hidden">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-base font-clash font-semibold flex items-center gap-2">
                             <i class="fas fa-folder-open text-accent text-sm"></i> My Portfolios
@@ -205,22 +226,22 @@
             </aside>
 
             <!-- Right Pane: Live Preview -->
-            <section class="flex-1 bg-[#050508] relative flex flex-col min-h-[400px] lg:min-h-0">
+            <section class="flex-1 bg-white dark:bg-[#050508] relative flex flex-col min-h-[400px] lg:min-h-0">
                 <!-- Top Toolbar with Preview/Code Toggle -->
-                <div class="flex items-center justify-between px-4 lg:px-6 py-3 border-b border-white/5 bg-[#050508] z-20 flex-shrink-0">
+                <div class="flex items-center justify-between px-4 lg:px-6 py-3 border-b border-slate-100 dark:border-slate-200 dark:border-white/5 bg-white dark:bg-[#050508] z-20 flex-shrink-0">
                     <!-- View Toggle Tabs -->
-                    <div class="flex bg-white/5 p-0.5 rounded-lg border border-white/10">
+                    <div class="flex bg-white/5 p-0.5 rounded-lg border border-slate-200 dark:border-white/10">
                         <button id="tab-preview" class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-accent text-black">
                             <i class="fas fa-eye mr-1.5"></i>Preview
                         </button>
-                        <button id="tab-code" class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-white/40 hover:text-white">
+                        <button id="tab-code" class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-slate-500 dark:text-white/40 hover:text-white">
                             <i class="fas fa-code mr-1.5"></i>Code
                         </button>
                     </div>
                     <!-- Right controls -->
                     <div class="flex items-center gap-2">
                         <span id="code-info" class="text-[10px] text-white/20 tracking-widest uppercase hidden">HTML · Edit freely</span>
-                        <button id="copy-code-btn" class="hidden items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white/60 hover:text-white transition-all">
+                        <button id="copy-code-btn" class="hidden items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-white/60 hover:text-white transition-all">
                             <i class="fas fa-copy"></i><span>Copy</span>
                         </button>
                         <div class="text-[10px] tracking-tighter uppercase font-medium text-white/20 flex items-center gap-1.5" id="preview-label">
@@ -230,7 +251,7 @@
                 </div>
 
                 <!-- Preview Pane -->
-                <div id="preview-frame" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pt-8 lg:pt-12 bg-[#0A0A0F]">
+                <div id="preview-frame" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pt-8 lg:pt-12 bg-slate-50 dark:bg-[#0A0A0F]">
                     <div id="preview-content" class="max-w-4xl mx-auto opacity-20 pointer-events-none select-none">
                         <div class="h-20 w-48 bg-white/5 rounded-xl mb-4 animate-pulse"></div>
                         <div class="h-8 w-72 bg-white/5 rounded-xl mb-3 animate-pulse"></div>
@@ -247,12 +268,12 @@
                             <i class="fas fa-magic"></i>
                         </div>
                         <h3 id="empty-state-title" class="text-2xl font-clash font-bold mb-3 typing-cursor">AI Portfolio Ready</h3>
-                        <p class="text-white/30 max-w-sm text-sm leading-relaxed">Complete the form on the left and let AI craft your professional portfolio in seconds.</p>
+                        <p class="text-slate-400 dark:text-white/30 max-w-sm text-sm leading-relaxed">Complete the form on the left and let AI craft your professional portfolio in seconds.</p>
                         <div class="mt-8 flex gap-3 flex-wrap justify-center">
-                            <div class="px-4 py-2 bg-white/5 border border-white/8 rounded-full text-[11px] text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> AI-Generated Bio</div>
-                            <div class="px-4 py-2 bg-white/5 border border-white/8 rounded-full text-[11px] text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> 5 Templates</div>
-                            <div class="px-4 py-2 bg-white/5 border border-white/8 rounded-full text-[11px] text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> Code Editor</div>
-                            <div class="px-4 py-2 bg-white/5 border border-white/8 rounded-full text-[11px] text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> Export HTML</div>
+                            <div class="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/8 rounded-full text-[11px] text-slate-500 dark:text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> AI-Generated Bio</div>
+                            <div class="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/8 rounded-full text-[11px] text-slate-500 dark:text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> 5 Templates</div>
+                            <div class="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/8 rounded-full text-[11px] text-slate-500 dark:text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> Code Editor</div>
+                            <div class="px-4 py-2 bg-white/5 border border-slate-200 dark:border-white/8 rounded-full text-[11px] text-slate-500 dark:text-white/40 flex items-center gap-2"><i class="fas fa-check text-accent/60 text-[9px]"></i> Export HTML</div>
                         </div>
                     </div>
                 </div>
