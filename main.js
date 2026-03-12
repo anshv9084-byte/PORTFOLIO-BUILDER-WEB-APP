@@ -54,6 +54,7 @@ let currentAccentColor = '#00D9FF';
 let currentFont = 'clash';
 let generatedContent = null;
 let currentUser = null;
+let lastFormData = {}; // persisted so renderPortfolio can access it
 
 // --- PREPARE USER ---
 async function fetchUser() {
@@ -260,6 +261,7 @@ portfolioForm.addEventListener('submit', async (e) => {
         accentColor: currentAccentColor,
         font: currentFont,
     };
+    lastFormData = formData;
 
     // Show loading state
     statusContainer.classList.remove('hidden');
@@ -463,6 +465,13 @@ function renderPortfolio() {
         return n + '%';
     }
 
+    const fontStyles = {
+        'clash': 'font-family: "Clash Display", system-ui, sans-serif !important;',
+        'inter': 'font-family: "Inter", system-ui, sans-serif !important;',
+        'mono': 'font-family: monospace !important;'
+    };
+    const selectedFontStyle = fontStyles[currentFont] || fontStyles['clash'];
+
     let html = '';
 
     // ═══════════════════════════════════════════════
@@ -470,7 +479,7 @@ function renderPortfolio() {
     // ═══════════════════════════════════════════════
     if (currentTheme === 'developer') {
         html = `
-        <div class="portfolio-root font-mono text-white bg-[#070710] min-h-screen">
+        <div class="portfolio-root font-mono text-white bg-[#070710] min-h-screen" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
             <!-- HERO -->
             <div class="portfolio-hero relative overflow-hidden">
                 <!-- Background image with overlay -->
@@ -619,7 +628,7 @@ function renderPortfolio() {
         // ═══════════════════════════════════════════════
     } else if (currentTheme === 'startup') {
         html = `
-        <div class="portfolio-root font-[system-ui] bg-white text-[#111] min-h-screen -m-12 pb-0">
+        <div class="portfolio-root font-[system-ui] bg-white text-[#111] min-h-screen -m-12 pb-0" style="--accent: ${currentAccentColor}; ${selectedFontStyle}">
             <!-- HERO -->
             <div class="portfolio-hero relative overflow-hidden bg-white pt-20 pb-0 px-12">
                 <!-- Subtle gradient BG -->
@@ -730,12 +739,12 @@ function renderPortfolio() {
             </div>
         </div>`;
 
-        // ═══════════════════════════════════════════════
-        // CREATIVE THEME
-        // ═══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════
+    // CREATIVE THEME
+    // ═══════════════════════════════════════════════
     } else if (currentTheme === 'creative') {
         html = `
-        <div class="portfolio-root text-white min-h-screen pb-20" style="background:linear-gradient(135deg,#06060F 0%,#0E0720 50%,#06060F 100%)">
+        <div class="portfolio-root text-white min-h-screen pb-20" style="background:linear-gradient(135deg,#06060F 0%,#0E0720 50%,#06060F 100%); --accent: ${currentAccentColor}; ${selectedFontStyle}">
             <!-- Ambient blobs -->
             <div class="fixed top-0 left-0 w-[600px] h-[600px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(0,217,255,0.08),transparent 70%);transform:translate(-30%,-30%)"></div>
             <div class="fixed bottom-0 right-0 w-[500px] h-[500px] rounded-full pointer-events-none" style="background:radial-gradient(circle,rgba(139,92,246,0.1),transparent 70%);transform:translate(30%,30%)"></div>
@@ -886,7 +895,7 @@ function renderPortfolio() {
     if (currentTheme === 'minimal') {
         const accent = currentAccentColor;
         html = `
-        <div class="portfolio-root" style="font-family:'Inter',system-ui,sans-serif;background:#fff;color:#111;min-height:100vh">
+        <div class="portfolio-root" style="background:#fff;color:#111;min-height:100vh;${selectedFontStyle}">
             <!-- Header -->
             <div class="portfolio-hero" style="max-width:680px;margin:0 auto;padding:72px 24px 48px">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:48px">
@@ -933,7 +942,7 @@ function renderPortfolio() {
             <!-- Footer -->
             <div style="border-top:1px solid #eee;max-width:680px;margin:0 auto;padding:32px 24px;display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:0.8rem;color:#aaa">© ${new Date().getFullYear()} ${name}</span>
-                ${formData?.email ? `<a href="mailto:${formData.email}" style="font-size:0.85rem;color:${accent};text-decoration:none;font-weight:600">${formData.email}</a>` : ''}
+                ${lastFormData?.email ? `<a href="mailto:${lastFormData.email}" style="font-size:0.85rem;color:${accent};text-decoration:none;font-weight:600">${lastFormData.email}</a>` : ''}
             </div>
         </div>`;
     }
@@ -944,7 +953,7 @@ function renderPortfolio() {
     if (currentTheme === 'bold') {
         const accent = currentAccentColor;
         html = `
-        <div class="portfolio-root" style="font-family:'Clash Display',system-ui,sans-serif;background:#000;color:#fff;min-height:100vh">
+        <div class="portfolio-root" style="background:#000;color:#fff;min-height:100vh;${selectedFontStyle}">
             <!-- HERO BANNER -->
             <div class="portfolio-hero" style="padding:0;position:relative;overflow:hidden">
                 <div style="background:${accent};padding:48px 48px 64px;min-height:300px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end">
@@ -1008,7 +1017,7 @@ function renderPortfolio() {
             <!-- FOOTER -->
             <div style="background:${accent};padding:40px 48px;display:flex;align-items:center;justify-content:space-between">
                 <span style="font-size:1.5rem;font-weight:900;color:#000;letter-spacing:-1px">${name}</span>
-                ${formData?.email ? `<a href="mailto:${formData.email}" style="color:#000;font-weight:700;text-decoration:none;font-size:0.85rem">${formData.email}</a>` : `<span style="color:rgba(0,0,0,0.5);font-size:0.8rem">© ${new Date().getFullYear()}</span>`}
+                ${lastFormData?.email ? `<a href="mailto:${lastFormData.email}" style="color:#000;font-weight:700;text-decoration:none;font-size:0.85rem">${lastFormData.email}</a>` : `<span style="color:rgba(0,0,0,0.5);font-size:0.8rem">© ${new Date().getFullYear()}</span>`}
             </div>
         </div>`;
     }
