@@ -1,0 +1,22 @@
+<svg width="900" height="500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0f172a" />
+            <stop offset="100%" stop-color="#334155" />
+        </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#bg1)" />
+    <!-- Dashboard mockup shapes -->
+    <rect x="50" y="50" width="200" height="400" rx="10" fill="#1e293b" />
+    <rect x="280" y="50" width="570" height="150" rx="10" fill="#1e293b" />
+    <rect x="280" y="230" width="270" height="220" rx="10" fill="#1e293b" />
+    <rect x="580" y="230" width="270" height="220" rx="10" fill="#1e293b" />
+    <circle cx="150" cy="100" r="30" fill="#38bdf8" />
+    <rect x="80" y="160" width="140" height="20" rx="5" fill="#475569" />
+    <rect x="80" y="210" width="140" height="20" rx="5" fill="#475569" />
+    <rect x="80" y="260" width="140" height="20" rx="5" fill="#475569" />
+    <rect x="310" y="90" width="100" height="70" rx="5" fill="#38bdf8" />
+    <rect x="440" y="90" width="100" height="70" rx="5" fill="#818cf8" />
+    <rect x="570" y="90" width="100" height="70" rx="5" fill="#34d399" />
+    <rect x="700" y="90" width="100" height="70" rx="5" fill="#fbbf24" />
+</svg>
