@@ -14,11 +14,11 @@
     </script>
     <!-- Fonts -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/main-C2y9Wsh7.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/style-B6nEs98U.js">
-  <link rel="stylesheet" crossorigin href="./assets/style-CnLKfArD.css">
+  <script type="module" crossorigin src="./assets/main-YvkzWmso.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/style-mXmcZIAr.js">
+  <link rel="stylesheet" crossorigin href="./assets/style-DJMGkFNc.css">
 </head>
-<body class="bg-slate-50 dark:bg-[#0A0A0F] text-slate-900 dark:text-white font-general overflow-hidden transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-[#0A0A0F] text-slate-900 dark:text-white font-general transition-colors duration-300 overflow-x-hidden">
     <!-- Animated Background -->
     <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 dark:bg-accent/10 rounded-full blur-[100px] animate-blob"></div>
@@ -26,14 +26,14 @@
         <div class="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-blue-500/20 dark:bg-blue-500/10 rounded-full blur-[150px] animate-blob animation-delay-4000"></div>
     </div>
 
-    <div id="app" class="h-screen flex flex-col relative z-10">
+    <div id="app" class="min-h-screen flex flex-col relative z-10">
         <!-- Header -->
-        <header class="h-16 border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-8 bg-white/70 dark:bg-[#0D0D14]/80 backdrop-blur-xl z-20">
+        <header class="min-h-16 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between px-4 lg:px-8 py-4 lg:py-0 bg-white/70 dark:bg-[#0D0D14]/80 backdrop-blur-xl z-20 gap-4">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-black font-bold">AI</div>
                 <h1 class="text-xl font-clash font-semibold">Portfolio <span class="text-accent">Pro</span></h1>
             </div>
-            <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 flex-wrap">
                 <!-- Dark / Light Theme Toggle -->
                 <button id="dark-mode-toggle" title="Toggle theme"
                     class="theme-toggle-btn w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:scale-110 hover:shadow-md hover:shadow-accent/20 transition-all duration-200">
@@ -47,12 +47,12 @@
                     </svg>
                 </button>
                 
-                <div id="theme-selector" class="flex bg-slate-100 dark:bg-white/5 p-1 rounded-full border border-slate-200 dark:border-white/10">
-                    <button data-theme="developer" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all bg-accent text-black">Developer</button>
-                    <button data-theme="startup" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-white/5">Startup</button>
-                    <button data-theme="creative" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-white/5">Creative</button>
+                <div id="theme-selector" class="flex bg-slate-100 dark:bg-white/5 p-1 rounded-full border border-slate-200 dark:border-white/10 overflow-x-auto no-scrollbar">
+                    <button data-theme="developer" class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all bg-accent text-black">Developer</button>
+                    <button data-theme="startup" class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Startup</button>
+                    <button data-theme="creative" class="px-3 lg:px-4 py-1.5 rounded-full text-[10px] lg:text-xs font-medium transition-all hover:bg-white/5">Creative</button>
                 </div>
-                <button id="download-btn" class="btn-ghost text-xs px-4 py-2 opacity-50 cursor-not-allowed" disabled>
+                <button id="download-btn" class="btn-ghost text-xs px-3 py-2 opacity-50 cursor-not-allowed" disabled>
                     <i class="fas fa-download mr-1"></i> Export
                 </button>
                 <button id="share-btn" class="bg-accent text-black px-4 py-2 rounded-full text-xs font-semibold hover:scale-105 transition-transform opacity-50 cursor-not-allowed" disabled>
@@ -62,9 +62,9 @@
         </header>
 
         <!-- Main Content (Two Panes) -->
-        <main class="flex-1 flex overflow-hidden">
+        <main class="flex-1 flex flex-col lg:flex-row overflow-x-hidden overflow-y-auto lg:overflow-hidden">
             <!-- Left Pane: Input Form -->
-            <aside class="w-[450px] border-r border-white/10 bg-[#0D0D14] p-8 overflow-y-auto z-10">
+            <aside class="w-full lg:w-[450px] border-b lg:border-b-0 lg:border-r border-white/10 bg-[#0D0D14] p-6 lg:p-8 flex-shrink-0 lg:overflow-y-auto z-10">
                 <div class="mb-8">
                     <h2 class="text-2xl font-clash font-bold mb-2">Build Your Portfolio</h2>
                     <p class="text-white/50 text-sm">Enter your details and let AI handle the heavy lifting.</p>
@@ -134,7 +134,7 @@
                 </div>
 
                 <!-- Preview Container -->
-                <div id="preview-frame" class="w-full h-full overflow-y-auto custom-scrollbar p-12 pt-24 bg-[#0A0A0F]">
+                <div id="preview-frame" class="w-full h-full overflow-y-auto custom-scrollbar p-4 lg:p-12 pt-20 lg:pt-24 bg-[#0A0A0F]">
                     <!-- The generated portfolio will be injected here -->
                     <div id="preview-content" class="max-w-4xl mx-auto opacity-20 pointer-events-none select-none">
                         <!-- Placeholder Content -->
