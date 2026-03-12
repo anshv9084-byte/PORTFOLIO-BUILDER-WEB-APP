@@ -53,6 +53,78 @@ const previewEmpty = document.getElementById('preview-empty');
 const previewContent = document.getElementById('preview-content');
 const themeButtons = document.querySelectorAll('#theme-selector button');
 
+// --- CODE EDITOR ELEMENTS ---
+const tabPreview = document.getElementById('tab-preview');
+const tabCode = document.getElementById('tab-code');
+const previewFrame = document.getElementById('preview-frame');
+const codeEditorPane = document.getElementById('code-editor-pane');
+const codeEditor = document.getElementById('code-editor');
+const copyCodeBtn = document.getElementById('copy-code-btn');
+const codeInfo = document.getElementById('code-info');
+const previewLabel = document.getElementById('preview-label');
+
+// --- TAB SWITCHING ---
+function switchToPreview() {
+    tabPreview.classList.add('bg-accent', 'text-black');
+    tabPreview.classList.remove('text-white/40', 'hover:text-white');
+    tabCode.classList.remove('bg-accent', 'text-black');
+    tabCode.classList.add('text-white/40', 'hover:text-white');
+    previewFrame.classList.remove('hidden');
+    codeEditorPane.classList.add('hidden');
+    codeEditorPane.classList.remove('flex');
+    copyCodeBtn.classList.add('hidden');
+    copyCodeBtn.classList.remove('flex');
+    codeInfo.classList.add('hidden');
+    previewLabel.classList.remove('hidden');
+}
+
+function switchToCode() {
+    tabCode.classList.add('bg-accent', 'text-black');
+    tabCode.classList.remove('text-white/40', 'hover:text-white');
+    tabPreview.classList.remove('bg-accent', 'text-black');
+    tabPreview.classList.add('text-white/40', 'hover:text-white');
+    previewFrame.classList.add('hidden');
+    codeEditorPane.classList.remove('hidden');
+    codeEditorPane.classList.add('flex');
+    copyCodeBtn.classList.remove('hidden');
+    copyCodeBtn.classList.add('flex');
+    codeInfo.classList.remove('hidden');
+    previewLabel.classList.add('hidden');
+    // Sync editor with current preview HTML
+    if (generatedContent && !codeEditor.dataset.userEdited) {
+        codeEditor.value = previewContent.innerHTML;
+    }
+}
+
+tabPreview.addEventListener('click', switchToPreview);
+tabCode.addEventListener('click', switchToCode);
+
+// Live preview update FROM code editor
+codeEditor.addEventListener('input', () => {
+    codeEditor.dataset.userEdited = 'true';
+    previewContent.innerHTML = codeEditor.value;
+    previewContent.classList.remove('opacity-20', 'pointer-events-none', 'select-none');
+    previewEmpty.classList.add('hidden');
+});
+
+// Copy code button
+copyCodeBtn.addEventListener('click', async () => {
+    const content = codeEditor.value || previewContent.innerHTML;
+    if (!content) return;
+    try {
+        await navigator.clipboard.writeText(content);
+        const span = copyCodeBtn.querySelector('span');
+        span.textContent = 'Copied!';
+        copyCodeBtn.classList.add('border-accent/50', 'text-accent');
+        setTimeout(() => {
+            span.textContent = 'Copy';
+            copyCodeBtn.classList.remove('border-accent/50', 'text-accent');
+        }, 2000);
+    } catch (e) {
+        alert('Could not copy: ' + e.message);
+    }
+});
+
 // --- FORM NAVIGATION ---
 function updateSteps() {
     steps.forEach((step, idx) => {
@@ -759,6 +831,9 @@ function renderPortfolio() {
     }
 
     previewContent.innerHTML = html;
+    // Sync code editor with newly generated content (reset user edits on new render)
+    codeEditor.dataset.userEdited = '';
+    codeEditor.value = html;
     // Run enter animations
     requestAnimationFrame(animatePortfolio);
     
@@ -783,7 +858,8 @@ function renderPortfolio() {
 // --- INITIALIZE BUTTONS ---
 document.getElementById('download-btn').addEventListener('click', () => {
     if (!generatedContent) return;
-    const html = previewContent.innerHTML;
+    // Use the editor's content if it has been manually edited, otherwise use the preview pane
+    const html = (codeEditor.dataset.userEdited && codeEditor.value) ? codeEditor.value : previewContent.innerHTML;
     const name = document.getElementById('name').value || 'portfolio';
     const fullPage = `<!DOCTYPE html>
 <html lang="en">

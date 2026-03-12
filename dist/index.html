@@ -14,9 +14,9 @@
     </script>
     <!-- Fonts -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/main-YvkzWmso.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/style-mXmcZIAr.js">
-  <link rel="stylesheet" crossorigin href="./assets/style-DJMGkFNc.css">
+  <script type="module" crossorigin src="./assets/main-CYx9K7pO.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/style-Cv_oiNca.js">
+  <link rel="stylesheet" crossorigin href="./assets/style-B0agSFo8.css">
 </head>
 <body class="bg-slate-50 dark:bg-[#0A0A0F] text-slate-900 dark:text-white font-general transition-colors duration-300 overflow-x-hidden">
     <!-- Animated Background -->
@@ -125,16 +125,32 @@
             </aside>
 
             <!-- Right Pane: Live Preview -->
-            <section class="flex-1 bg-[#050508] relative">
-                <!-- Preview Toolbar -->
-                <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full flex gap-4 text-[10px] tracking-tighter uppercase font-medium text-white/40 z-20">
-                    <span class="flex items-center gap-1.5"><i class="fas fa-desktop"></i> Responsive Preview</span>
-                    <span class="w-px h-3 bg-white/10 mt-0.5"></span>
-                    <span>Live Rendering</span>
+            <section class="flex-1 bg-[#050508] relative flex flex-col min-h-[400px] lg:min-h-0">
+                <!-- Top Toolbar with Preview/Code Toggle -->
+                <div class="flex items-center justify-between px-4 lg:px-6 py-3 border-b border-white/5 bg-[#050508] z-20 flex-shrink-0">
+                    <!-- View Toggle Tabs -->
+                    <div class="flex bg-white/5 p-0.5 rounded-lg border border-white/10">
+                        <button id="tab-preview" class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all bg-accent text-black">
+                            <i class="fas fa-eye mr-1.5"></i>Preview
+                        </button>
+                        <button id="tab-code" class="px-4 py-1.5 rounded-md text-xs font-semibold transition-all text-white/40 hover:text-white">
+                            <i class="fas fa-code mr-1.5"></i>Code
+                        </button>
+                    </div>
+                    <!-- Right controls -->
+                    <div class="flex items-center gap-2">
+                        <span id="code-info" class="text-[10px] text-white/20 tracking-widest uppercase hidden">HTML · Edit freely</span>
+                        <button id="copy-code-btn" class="hidden items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white/60 hover:text-white transition-all">
+                            <i class="fas fa-copy"></i><span>Copy</span>
+                        </button>
+                        <div class="text-[10px] tracking-tighter uppercase font-medium text-white/20 flex items-center gap-1.5" id="preview-label">
+                            <i class="fas fa-desktop"></i> Live Preview
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Preview Container -->
-                <div id="preview-frame" class="w-full h-full overflow-y-auto custom-scrollbar p-4 lg:p-12 pt-20 lg:pt-24 bg-[#0A0A0F]">
+                <!-- Preview Pane -->
+                <div id="preview-frame" class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-12 pt-8 lg:pt-12 bg-[#0A0A0F]">
                     <!-- The generated portfolio will be injected here -->
                     <div id="preview-content" class="max-w-4xl mx-auto opacity-20 pointer-events-none select-none">
                         <!-- Placeholder Content -->
@@ -147,13 +163,24 @@
                     </div>
                     
                     <!-- Empty State Overlay -->
-                    <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-12">
+                    <div id="preview-empty" class="absolute inset-0 top-[52px] flex flex-col items-center justify-center text-center p-12">
                         <div class="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent text-3xl mb-6">
                             <i class="fas fa-magic"></i>
                         </div>
                         <h3 class="text-2xl font-clash font-bold mb-3">AI Portfolio Ready</h3>
                         <p class="text-white/40 max-w-sm">Complete the form on the left to see your professionally generated portfolio here in real-time.</p>
                     </div>
+                </div>
+
+                <!-- Code Editor Pane (hidden by default) -->
+                <div id="code-editor-pane" class="hidden flex-1 flex flex-col overflow-hidden">
+                    <textarea
+                        id="code-editor"
+                        spellcheck="false"
+                        placeholder="Generate a portfolio first to view and edit the code here..."
+                        class="flex-1 w-full bg-[#070710] text-[#a8b5c9] font-mono text-xs leading-relaxed p-4 lg:p-6 resize-none outline-none border-none custom-scrollbar"
+                        style="tab-size: 2;"
+                    ></textarea>
                 </div>
             </section>
         </main>
