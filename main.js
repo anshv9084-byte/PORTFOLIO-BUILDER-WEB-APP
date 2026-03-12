@@ -50,6 +50,8 @@ checkUser();
 // --- STATE MANAGEMENT ---
 let currentStep = 1;
 let currentTheme = 'developer';
+let currentAccentColor = '#00D9FF';
+let currentFont = 'clash';
 let generatedContent = null;
 let currentUser = null;
 
@@ -60,20 +62,14 @@ async function fetchUser() {
 }
 fetchUser();
 
-// --- DARK MODE LOGIC ---
-const darkModeToggle = document.getElementById('dark-mode-toggle');
-
-darkModeToggle.addEventListener('click', () => {
-    const isDark = document.documentElement.classList.toggle('dark');
-    localStorage.theme = isDark ? 'dark' : 'light';
-    // Animate the button on click
-    darkModeToggle.style.transform = 'scale(0.85) rotate(20deg)';
-    setTimeout(() => { darkModeToggle.style.transform = ''; }, 200);
-});
-
 // --- DOM ELEMENTS ---
 const portfolioForm = document.getElementById('portfolio-form');
-const steps = [document.getElementById('step-1'), document.getElementById('step-2')];
+const steps = [
+    document.getElementById('step-1'),
+    document.getElementById('step-2'),
+    document.getElementById('step-3'),
+    document.getElementById('step-4')
+];
 const nextBtns = document.querySelectorAll('.next-step');
 const prevBtns = document.querySelectorAll('.prev-step');
 const indicators = document.querySelectorAll('.step-indicator');
@@ -98,6 +94,44 @@ const portfoliosCount = document.getElementById('portfolios-count');
 const portfoliosList = document.getElementById('portfolios-list');
 const saveBtn = document.getElementById('save-btn');
 let savedPortfolios = [];
+
+// --- COLOR & FONT PICKERS ---
+document.querySelectorAll('.color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', () => {
+        document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        currentAccentColor = swatch.dataset.color;
+        document.documentElement.style.setProperty('--accent', currentAccentColor);
+        // update any existing preview
+        if (generatedContent) renderPortfolio();
+    });
+});
+
+document.querySelectorAll('.font-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.font-option').forEach(b => {
+            b.classList.remove('border-accent/50', 'bg-accent/10', 'text-accent');
+            b.classList.add('border-white/10', 'bg-white/5');
+        });
+        btn.classList.add('border-accent/50', 'bg-accent/10', 'text-accent');
+        btn.classList.remove('border-white/10', 'bg-white/5');
+        currentFont = btn.dataset.font;
+        if (generatedContent) renderPortfolio();
+    });
+});
+
+// --- SCROLL REVEAL (Intersection Observer) ---
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.1 });
+document.querySelectorAll('.scroll-reveal').forEach(el => revealObserver.observe(el));
+
+
 
 // --- TAB SWITCHING ---
 function switchToPreview() {
@@ -217,9 +251,14 @@ portfolioForm.addEventListener('submit', async (e) => {
     const formData = {
         name: document.getElementById('name').value,
         role: document.getElementById('role').value,
+        taglineInput: document.getElementById('tagline-input')?.value || '',
         skills: document.getElementById('skills').value,
         projects: document.getElementById('projects').value,
         github: document.getElementById('github').value,
+        email: document.getElementById('email')?.value || '',
+        linkedin: document.getElementById('linkedin')?.value || '',
+        accentColor: currentAccentColor,
+        font: currentFont,
     };
 
     // Show loading state
@@ -247,9 +286,15 @@ portfolioForm.addEventListener('submit', async (e) => {
 
         // Show success / enable buttons
         document.getElementById('download-btn').disabled = false;
-        document.getElementById('download-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+        document.getElementById('download-btn').classList.remove('opacity-40', 'cursor-not-allowed');
+        document.getElementById('readme-btn').disabled = false;
+        document.getElementById('readme-btn').classList.remove('opacity-40', 'cursor-not-allowed');
         document.getElementById('share-btn').disabled = false;
-        document.getElementById('share-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+        document.getElementById('share-btn').classList.remove('opacity-40', 'cursor-not-allowed');
+        if (currentUser) {
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+        }
 
     } catch (err) {
         console.warn('AI Generation trigger failed. Falling back to Demo Mode.');
@@ -825,17 +870,145 @@ function renderPortfolio() {
                 <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(ellipse at center,rgba(0,217,255,0.06),transparent 70%)"></div>
                 <div class="relative z-10">
                     <h2 class="font-black mb-6 leading-none" style="font-family:'Clash Display',sans-serif;font-size:clamp(2.5rem,6vw,4.5rem)">
-                        Let's build<br>
-                        <span class="text-transparent" style="-webkit-text-stroke:1px rgba(0,217,255,0.5)">something</span><br>
-                        <span style="color:#00D9FF">extraordinary.</span>
-                    </h2>
-                    <p class="text-white/30 mb-10 max-w-sm mx-auto">Available for select projects and collaborations worldwide.</p>
                     <a href="mailto:hello@${name.toLowerCase().replace(/\s/g, '')}.dev" class="inline-flex items-center gap-3 px-10 py-5 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-[0_0_40px_rgba(0,217,255,0.3)]" style="background:linear-gradient(135deg,#00D9FF,#818CF8);color:#000">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                         Get In Touch
                     </a>
                     <p class="text-white/15 text-xs mt-12">© ${new Date().getFullYear()} ${name} · AI Portfolio Pro</p>
                 </div>
+            </div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // MINIMAL THEME
+    // ═══════════════════════════════════════════════
+    if (currentTheme === 'minimal') {
+        const accent = currentAccentColor;
+        html = `
+        <div class="portfolio-root" style="font-family:'Inter',system-ui,sans-serif;background:#fff;color:#111;min-height:100vh">
+            <!-- Header -->
+            <div class="portfolio-hero" style="max-width:680px;margin:0 auto;padding:72px 24px 48px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:48px">
+                    <div style="width:44px;height:44px;background:${accent};border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#000;font-size:14px">${initials}</div>
+                    ${githubUser ? `<a href="https://github.com/${githubUser}" target="_blank" style="color:#888;font-size:13px;text-decoration:none;border:1px solid #eee;padding:6px 14px;border-radius:20px;transition:all 0.2s" onmouseover="this.style.borderColor='${accent}'" onmouseout="this.style.borderColor='#eee'">GitHub ↗</a>` : ''}
+                </div>
+                <h1 style="font-size:3rem;font-weight:800;line-height:1.1;letter-spacing:-2px;margin-bottom:12px;color:#111">${name}</h1>
+                <p style="font-size:1.1rem;color:#555;margin-bottom:16px">${role}</p>
+                <p style="font-size:0.95rem;color:#777;line-height:1.7;max-width:540px;border-left:3px solid ${accent};padding-left:16px">${tagline}</p>
+            </div>
+
+            <!-- About -->
+            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 48px">
+                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:16px">About</p>
+                <p style="font-size:1rem;color:#444;line-height:1.8">${about}</p>
+            </div>
+
+            <!-- Skills -->
+            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 48px">
+                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:16px">Skills</p>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                    ${skills.map(s => `<span style="font-size:0.8rem;padding:4px 12px;background:#f5f5f5;border-radius:20px;color:#444">${s}</span>`).join('')}
+                </div>
+            </div>
+
+            <!-- Projects -->
+            <div class="portfolio-section" style="max-width:680px;margin:0 auto;padding:0 24px 64px">
+                <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#aaa;margin-bottom:24px">Projects</p>
+                <div style="display:flex;flex-direction:column;gap:24px">
+                    ${projects.map((p, i) => `
+                    <div style="padding:24px;border:1px solid #eee;border-radius:16px;transition:all 0.2s" class="card-hover">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                            <h3 style="font-size:1.05rem;font-weight:700;color:#111">${p.title}</h3>
+                            <span style="font-size:0.7rem;color:#aaa;font-family:monospace">0${i+1}</span>
+                        </div>
+                        <p style="font-size:0.875rem;color:#666;line-height:1.6;margin-bottom:12px">${p.description}</p>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            ${p.tech.map(t => `<span style="font-size:0.7rem;padding:2px 8px;background:#f5f5f5;color:#666;border-radius:10px">${t}</span>`).join('')}
+                        </div>
+                    </div>`).join('')}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="border-top:1px solid #eee;max-width:680px;margin:0 auto;padding:32px 24px;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:0.8rem;color:#aaa">© ${new Date().getFullYear()} ${name}</span>
+                ${formData?.email ? `<a href="mailto:${formData.email}" style="font-size:0.85rem;color:${accent};text-decoration:none;font-weight:600">${formData.email}</a>` : ''}
+            </div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════
+    // BOLD THEME
+    // ═══════════════════════════════════════════════
+    if (currentTheme === 'bold') {
+        const accent = currentAccentColor;
+        html = `
+        <div class="portfolio-root" style="font-family:'Clash Display',system-ui,sans-serif;background:#000;color:#fff;min-height:100vh">
+            <!-- HERO BANNER -->
+            <div class="portfolio-hero" style="padding:0;position:relative;overflow:hidden">
+                <div style="background:${accent};padding:48px 48px 64px;min-height:300px;display:grid;grid-template-columns:1fr auto;gap:32px;align-items:end">
+                    <div>
+                        <div style="font-size:0.7rem;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:rgba(0,0,0,0.5);margin-bottom:12px">${role}</div>
+                        <h1 style="font-size:clamp(3rem,8vw,6rem);font-weight:900;line-height:0.9;color:#000;letter-spacing:-4px;margin-bottom:0">${name}</h1>
+                    </div>
+                    <div style="text-align:right">
+                        <div style="width:80px;height:80px;background:#000;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:900;color:${accent}">${initials}</div>
+                    </div>
+                </div>
+                <!-- Tagline bar -->
+                <div style="background:#111;padding:16px 48px;border-bottom:1px solid #222">
+                    <p style="font-size:0.9rem;color:#666;font-family:'Inter',sans-serif">${tagline}</p>
+                </div>
+            </div>
+
+            <!-- CONTENT GRID -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;min-height:400px">
+                <!-- About -->
+                <div class="portfolio-section" style="padding:48px;border-right:1px solid #222">
+                    <div style="font-size:0.65rem;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:#444;margin-bottom:24px">About</div>
+                    <p style="font-size:0.95rem;color:#999;line-height:1.8;font-family:'Inter',sans-serif">${about}</p>
+                    ${githubUser ? `<a href="https://github.com/${githubUser}" target="_blank" style="margin-top:24px;display:inline-flex;align-items:center;gap:8px;color:${accent};font-size:0.8rem;font-weight:700;text-decoration:none">View GitHub ↗</a>` : ''}
+                </div>
+                <!-- Skills -->
+                <div class="portfolio-section" style="padding:48px">
+                    <div style="font-size:0.65rem;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:#444;margin-bottom:24px">Expertise</div>
+                    <div style="display:flex;flex-direction:column;gap:12px">
+                        ${skills.map(s => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1a1a1a">
+                            <span style="font-size:0.9rem;font-weight:700;color:#fff">${s}</span>
+                            <div style="width:60px;height:3px;background:#222;border-radius:2px;overflow:hidden">
+                                <div style="width:${Math.floor(Math.random() * 30 + 70)}%;height:100%;background:${accent};border-radius:2px"></div>
+                            </div>
+                        </div>`).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROJECTS GRID -->
+            <div class="portfolio-section" style="padding:48px;border-top:1px solid #222">
+                <div style="font-size:0.65rem;font-weight:900;letter-spacing:0.3em;text-transform:uppercase;color:#444;margin-bottom:32px">Selected Work</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:2px">
+                    ${projects.map((p, i) => {
+                        const colors = [accent, '#1a1a1a', '#111', '#0a0a0a'];
+                        const textColor = i === 0 ? '#000' : '#fff';
+                        return `
+                    <div class="card-hover" style="background:${colors[i % colors.length]};padding:40px 32px;cursor:default">
+                        <div style="font-size:2rem;font-weight:900;color:${i===0?'rgba(0,0,0,0.15)':'rgba(255,255,255,0.06)'};font-family:monospace;margin-bottom:24px">0${i+1}</div>
+                        <h3 style="font-size:1.4rem;font-weight:900;color:${textColor};letter-spacing:-1px;margin-bottom:12px">${p.title}</h3>
+                        <p style="font-size:0.8rem;color:${i===0?'rgba(0,0,0,0.65)':'#666'};line-height:1.6;margin-bottom:20px;font-family:'Inter',sans-serif">${p.description}</p>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap">
+                            ${p.tech.map(t => `<span style="font-size:0.65rem;padding:3px 10px;background:${i===0?'rgba(0,0,0,0.15)':'rgba(255,255,255,0.08)'};border-radius:20px;color:${i===0?'rgba(0,0,0,0.7)':'#888'};font-weight:700">${t}</span>`).join('')}
+                        </div>
+                    </div>`;
+                    }).join('')}
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div style="background:${accent};padding:40px 48px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:1.5rem;font-weight:900;color:#000;letter-spacing:-1px">${name}</span>
+                ${formData?.email ? `<a href="mailto:${formData.email}" style="color:#000;font-weight:700;text-decoration:none;font-size:0.85rem">${formData.email}</a>` : `<span style="color:rgba(0,0,0,0.5);font-size:0.8rem">© ${new Date().getFullYear()}</span>`}
             </div>
         </div>`;
     }
@@ -957,6 +1130,80 @@ document.getElementById('share-btn').addEventListener('click', async () => {
 
     alert(`🚀 Your portfolio is live at:\nhttps://portfolio.ai/${slug}\n\n(Copy this link to share with anyone!)`);
 });
+
+// --- README EXPORT ---
+document.getElementById('readme-btn').addEventListener('click', () => {
+    if (!generatedContent) return;
+
+    const name = document.getElementById('name').value || 'Developer';
+    const role = document.getElementById('role').value || 'Developer';
+    const github = document.getElementById('github').value || '';
+    const linkedin = document.getElementById('linkedin')?.value || '';
+    const email = document.getElementById('email')?.value || '';
+    const { tagline, about, skills, projects } = generatedContent;
+
+    const skillBadges = skills.map(s =>
+        `![${s}](https://img.shields.io/badge/${encodeURIComponent(s)}-informational?style=flat&color=00D9FF)`
+    ).join(' ');
+
+    const projectSection = projects.map((p, i) => 
+        `### ${i + 1}. ${p.title}\n${p.description}\n\n**Tech:** ${p.tech.join(', ')}`
+    ).join('\n\n---\n\n');
+
+    const contactLinks = [
+        github ? `[🐙 GitHub](https://github.com/${github})` : null,
+        linkedin ? `[💼 LinkedIn](https://${linkedin.replace('https://','')})` : null,
+        email ? `[📧 Email](mailto:${email})` : null,
+    ].filter(Boolean).join(' · ');
+
+    const readme = `<div align="center">
+
+# 👋 Hi, I'm ${name}
+
+### ${role}
+
+*${tagline}*
+
+${contactLinks}
+
+</div>
+
+---
+
+## 🙋 About Me
+
+${about}
+
+---
+
+## 🛠️ Skills & Technologies
+
+${skillBadges}
+
+---
+
+## 🚀 Featured Projects
+
+${projectSection}
+
+---
+
+<div align="center">
+
+*Built with [AI Portfolio Pro](https://github.com/ai-portfolio-pro)*
+
+</div>
+`;
+
+    const blob = new Blob([readme], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'README.md';
+    a.click();
+    URL.revokeObjectURL(url);
+});
+
 
 
 
