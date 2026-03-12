@@ -15,9 +15,9 @@
     </script>
     <!-- Fonts -->
     <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
-  <script type="module" crossorigin src="./assets/main-wiElWSxS.js"></script>
-  <link rel="modulepreload" crossorigin href="./assets/style-BEVb528n.js">
-  <link rel="stylesheet" crossorigin href="./assets/style-DRTS3aVz.css">
+  <script type="module" crossorigin src="./assets/main-C19uZOZG.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/style-BzQggXsJ.js">
+  <link rel="stylesheet" crossorigin href="./assets/style-BPfBb4pR.css">
 </head>
 <body class="bg-[#0A0A0F] text-white font-general transition-colors duration-300 overflow-x-hidden">
     <!-- Animated Background -->
@@ -27,7 +27,21 @@
         <div class="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-blue-500/8 rounded-full blur-[150px] animate-blob animation-delay-4000"></div>
     </div>
 
-    <div id="app" class="min-h-screen flex flex-col relative z-10">
+    <!-- Mobile Warning Overlay -->
+    <div id="mobile-warning" class="fixed inset-0 z-[100] bg-[#0A0A0F] text-white flex flex-col items-center justify-center p-8 text-center lg:hidden">
+        <div class="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent text-3xl mb-6 shadow-[0_0_30px_rgba(0,217,255,0.2)]">
+            <i class="fas fa-desktop"></i>
+        </div>
+        <h2 class="text-2xl font-clash font-bold mb-3">Desktop Recommended</h2>
+        <p class="text-white/50 text-sm leading-relaxed max-w-xs mb-8">
+            The Portfolio Builder requires a larger screen to display the live code editor and preview pane side-by-side. 
+        </p>
+        <p class="text-white/80 font-semibold text-sm bg-white/5 px-6 py-3 rounded-xl border border-white/10">
+            Please switch to a computer or enable "Desktop Site" in your mobile browser settings.
+        </p>
+    </div>
+
+    <div id="app" class="min-h-screen flex flex-col relative z-10 hidden lg:flex">
         <!-- Header -->
         <header class="min-h-16 border-b border-white/8 flex flex-wrap items-center justify-between px-4 lg:px-8 py-3 lg:py-0 bg-[#0D0D14]/90 backdrop-blur-xl z-20 gap-3">
             <a href="./landing.html" class="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
