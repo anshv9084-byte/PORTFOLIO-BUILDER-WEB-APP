@@ -7,16 +7,45 @@ const SUPABASE_KEY = 'sb_publishable_seUTej9kixmVRZgvtugmXw__p2MUoU1';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// --- AUTH CHECK ---
-async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession();
-    const isGuest = localStorage.getItem('guest_mode') === 'true';
+// --- AUTH CHECK ---// Call this on load to check if user is returning
+async function checkUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+        currentUser = user;
+        console.log('User signed in:', user.email);
+        
+        // Unhide the My Portfolios panel layout (it will just be empty if no saves)
+        myPortfoliosPanel.classList.remove('hidden');
+        loadSavedPortfolios();
+        
+        // Auto-fill some form data if they have a saved profile
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
 
-    if (!session && !isGuest) {
-        window.location.href = 'login.html';
+        if (profile) {
+            if(profile.name) document.getElementById('name').value = profile.name;
+            if(profile.title) document.getElementById('role').value = profile.title;
+            if(profile.github_url) document.getElementById('github').value = profile.github_url;
+            
+            // Also enable the save/publish buttons
+            saveBtn.disabled = false;
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    } else {
+        // If no user and not guest, redirect to login
+        if (localStorage.getItem('guestMode') !== 'true') {
+            window.location.href = './login.html';
+        } else {
+            // Guest mode
+            console.log("Running in Ghost Mode (Guest)");
+            myPortfoliosPanel.classList.add('hidden'); // Ensure hidden for guests
+        }
     }
 }
-checkAuth();
+checkUser();
 
 // --- STATE MANAGEMENT ---
 let currentStep = 1;
@@ -62,6 +91,13 @@ const codeEditor = document.getElementById('code-editor');
 const copyCodeBtn = document.getElementById('copy-code-btn');
 const codeInfo = document.getElementById('code-info');
 const previewLabel = document.getElementById('preview-label');
+
+// --- SAVED PORTFOLIOS ELEMENTS ---
+const myPortfoliosPanel = document.getElementById('my-portfolios-panel');
+const portfoliosCount = document.getElementById('portfolios-count');
+const portfoliosList = document.getElementById('portfolios-list');
+const saveBtn = document.getElementById('save-btn');
+let savedPortfolios = [];
 
 // --- TAB SWITCHING ---
 function switchToPreview() {
@@ -122,6 +158,15 @@ copyCodeBtn.addEventListener('click', async () => {
         }, 2000);
     } catch (e) {
         alert('Could not copy: ' + e.message);
+    }
+});
+
+// Unsaved changes warning
+window.addEventListener('beforeunload', (e) => {
+    if (codeEditor.dataset.userEdited === 'true' && generatedContent) {
+        const message = 'You have unsaved changes to your portfolio code. Are you sure you want to leave?';
+        e.returnValue = message; // Standard for most browsers
+        return message; // For some older browsers
     }
 });
 
@@ -248,41 +293,6 @@ async function savePortfolioToDatabase(formData, content) {
         if (userError) { console.error('User upsert error:', userError.message); return; }
         console.log('✅ User profile saved.');
 
-        // 2. Refresh Skills (Delete old, Insert new)
-        const { error: delSkillsErr } = await supabase.from('skills').delete().eq('user_id', userId);
-        if (delSkillsErr) { console.error('Skills delete error:', delSkillsErr.message); return; }
-        
-        if (content.skills && content.skills.length > 0) {
-            const skillsToInsert = content.skills.map((skill, index) => ({
-                user_id: userId,
-                skill_name: skill,
-                category: 'General',
-                position: index
-            }));
-            const { error: skillsError } = await supabase.from('skills').insert(skillsToInsert);
-            if (skillsError) { console.error('Skills insert error:', skillsError.message); return; }
-            console.log('✅ Skills saved:', content.skills.length);
-        }
-
-        // 3. Refresh Projects (Delete old, Insert new)
-        const { error: delProjErr } = await supabase.from('projects').delete().eq('user_id', userId);
-        if (delProjErr) { console.error('Projects delete error:', delProjErr.message); return; }
-        
-        if (content.projects && content.projects.length > 0) {
-            const projectsToInsert = content.projects.map((proj, index) => ({
-                user_id: userId,
-                title: proj.title,
-                description: proj.description,
-                tech_stack: proj.tech,
-                position: index
-            }));
-            const { error: projectsError } = await supabase.from('projects').insert(projectsToInsert);
-            if (projectsError) { console.error('Projects insert error:', projectsError.message); return; }
-            console.log('✅ Projects saved:', content.projects.length);
-        }
-
-        console.log('🎉 Portfolio fully saved to Supabase!');
-        
     } catch (err) {
         console.error('Failed to save portfolio to database:', err.message);
     }
@@ -856,6 +866,54 @@ function renderPortfolio() {
 }
 
 // --- INITIALIZE BUTTONS ---
+saveBtn.addEventListener('click', async () => {
+    if (!generatedContent || !currentUser) {
+        if (!currentUser) alert("You must be logged in to save portfolios.");
+        return;
+    }
+    
+    const htmlToSave = codeEditor.dataset.userEdited === 'true' && codeEditor.value ? codeEditor.value : previewContent.innerHTML;
+    let portfolioName = prompt("Name this portfolio version:", "My Portfolio");
+    if (!portfolioName) return;
+    
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = 'Saving...';
+    saveBtn.disabled = true;
+    
+    try {
+        const { data, error } = await supabase
+            .from('saved_portfolios')
+            .insert([{
+                user_id: currentUser.id,
+                name: portfolioName,
+                html_content: htmlToSave
+            }])
+            .select();
+            
+        if (error) throw error;
+        
+        // Reset user edited state since they just saved it
+        codeEditor.dataset.userEdited = '';
+        
+        // Refresh the list
+        savedPortfolios = [data[0], ...savedPortfolios];
+        renderSavedPortfoliosList();
+        
+        saveBtn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+        saveBtn.classList.add('text-green-400');
+        setTimeout(() => {
+            saveBtn.innerHTML = originalText;
+            saveBtn.classList.remove('text-green-400');
+            saveBtn.disabled = false;
+        }, 2000);
+    } catch (e) {
+        console.error("Error saving portfolio code:", e);
+        alert("Failed to save portfolio. Please try again.");
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    }
+});
+
 document.getElementById('download-btn').addEventListener('click', () => {
     if (!generatedContent) return;
     // Use the editor's content if it has been manually edited, otherwise use the preview pane

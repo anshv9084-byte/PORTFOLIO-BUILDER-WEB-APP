@@ -53,6 +53,9 @@
                 <button id="download-btn" class="btn-ghost text-xs px-3 py-2 opacity-50 cursor-not-allowed" disabled>
                     <i class="fas fa-download mr-1"></i> Export
                 </button>
+                <button id="save-btn" class="btn-ghost text-xs px-3 py-2 opacity-50 cursor-not-allowed text-accent hover:bg-accent/10" disabled>
+                    <i class="fas fa-save mr-1"></i> Save
+                </button>
                 <button id="share-btn" class="bg-accent text-black px-4 py-2 rounded-full text-xs font-semibold hover:scale-105 transition-transform opacity-50 cursor-not-allowed" disabled>
                     Publish
                 </button>
@@ -118,6 +121,19 @@
                             <h4 class="text-sm font-semibold text-accent">AI is generating...</h4>
                             <p class="text-xs text-white/50">Crafting your professional bio and descriptions.</p>
                         </div>
+                    </div>
+                </div>
+
+                <!-- My Portfolios Panel -->
+                <div id="my-portfolios-panel" class="mt-12 pt-8 border-t border-white/10 hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-clash font-semibold flex items-center gap-2">
+                            <i class="fas fa-folder-open text-accent"></i> My Portfolios
+                        </h3>
+                        <span id="portfolios-count" class="bg-white/10 px-2 py-0.5 rounded text-xs text-white/60">0</span>
+                    </div>
+                    <div id="portfolios-list" class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                        <!-- Saved portfolios will be injected here -->
                     </div>
                 </div>
             </aside>
