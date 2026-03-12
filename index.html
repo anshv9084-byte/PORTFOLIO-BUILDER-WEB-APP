@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Portfolio Pro | Create Your Identity</title>
+    <!-- Theme init - prevents flash of wrong theme -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <!-- Fonts -->
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600&f[]=general-sans@400,500,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-slate-50 dark:bg-[#0A0A0F] text-slate-900 dark:text-white font-general overflow-hidden transition-colors duration-300">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-accent/20 dark:bg-accent/10 rounded-full blur-[100px] animate-blob"></div>
+        <div class="absolute top-[20%] right-[-10%] w-[50%] h-[50%] bg-purple-500/20 dark:bg-purple-500/10 rounded-full blur-[120px] animate-blob animation-delay-2000"></div>
+        <div class="absolute bottom-[-20%] left-[20%] w-[60%] h-[60%] bg-blue-500/20 dark:bg-blue-500/10 rounded-full blur-[150px] animate-blob animation-delay-4000"></div>
+    </div>
+
+    <div id="app" class="h-screen flex flex-col relative z-10">
+        <!-- Header -->
+        <header class="h-16 border-b border-slate-200 dark:border-white/10 flex items-center justify-between px-8 bg-white/70 dark:bg-[#0D0D14]/80 backdrop-blur-xl z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-black font-bold">AI</div>
+                <h1 class="text-xl font-clash font-semibold">Portfolio <span class="text-accent">Pro</span></h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Dark / Light Theme Toggle -->
+                <button id="dark-mode-toggle" title="Toggle theme"
+                    class="theme-toggle-btn w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:scale-110 hover:shadow-md hover:shadow-accent/20 transition-all duration-200">
+                    <!-- Moon icon (shown in light mode) -->
+                    <svg class="block dark:hidden w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                    <!-- Sun icon (shown in dark mode) -->
+                    <svg class="hidden dark:block w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+                    </svg>
+                </button>
+                
+                <div id="theme-selector" class="flex bg-slate-100 dark:bg-white/5 p-1 rounded-full border border-slate-200 dark:border-white/10">
+                    <button data-theme="developer" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all bg-accent text-black">Developer</button>
+                    <button data-theme="startup" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-white/5">Startup</button>
+                    <button data-theme="creative" class="px-4 py-1.5 rounded-full text-xs font-medium transition-all hover:bg-white/5">Creative</button>
+                </div>
+                <button id="download-btn" class="btn-ghost text-xs px-4 py-2 opacity-50 cursor-not-allowed" disabled>
+                    <i class="fas fa-download mr-1"></i> Export
+                </button>
+                <button id="share-btn" class="bg-accent text-black px-4 py-2 rounded-full text-xs font-semibold hover:scale-105 transition-transform opacity-50 cursor-not-allowed" disabled>
+                    Publish
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content (Two Panes) -->
+        <main class="flex-1 flex overflow-hidden">
+            <!-- Left Pane: Input Form -->
+            <aside class="w-[450px] border-r border-white/10 bg-[#0D0D14] p-8 overflow-y-auto z-10">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-clash font-bold mb-2">Build Your Portfolio</h2>
+                    <p class="text-white/50 text-sm">Enter your details and let AI handle the heavy lifting.</p>
+                </div>
+
+                <!-- Stepper -->
+                <div class="flex gap-2 mb-10">
+                    <div class="step-indicator flex-1 h-1 rounded-full bg-accent"></div>
+                    <div class="step-indicator flex-1 h-1 rounded-full bg-white/10"></div>
+                    <div class="step-indicator flex-1 h-1 rounded-full bg-white/10"></div>
+                </div>
+
+                <form id="portfolio-form" class="space-y-6">
+                    <!-- Step 1: Identity -->
+                    <div id="step-1" class="step-content space-y-6 animate-fade-in">
+                        <div>
+                            <label class="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">Your Name</label>
+                            <input type="text" id="name" placeholder="Ansh Verma" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">Professional Role</label>
+                            <input type="text" id="role" placeholder="Frontend Developer" class="form-input" required>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">Main Technologies</label>
+                            <input type="text" id="skills" placeholder="React, Node.js, Tailwind" class="form-input" required>
+                        </div>
+                        <button type="button" class="next-step w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl font-semibold transition-all">Continue <i class="fas fa-arrow-right ml-2"></i></button>
+                    </div>
+
+                    <!-- Step 2: Projects (Hidden initially) -->
+                    <div id="step-2" class="step-content space-y-6 hidden">
+                        <div>
+                            <label class="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">Top Projects (Comma Separated)</label>
+                            <textarea id="projects" placeholder="E-commerce site, Habit Tracker app..." class="form-input h-32"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-white/50 uppercase tracking-widest mb-2">GitHub Username</label>
+                            <input type="text" id="github" placeholder="anshverma" class="form-input">
+                        </div>
+                        <div class="flex gap-4">
+                            <button type="button" class="prev-step flex-1 border border-white/10 hover:bg-white/5 py-3 rounded-xl font-semibold transition-all">Back</button>
+                            <button id="generate-btn" type="submit" class="flex-[2] bg-accent text-black py-3 rounded-xl font-bold shadow-[0_0_20px_rgba(0,217,255,0.3)] hover:scale-[1.02] transition-transform">Generate via AI</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Status / Loading -->
+                <div id="status-container" class="mt-10 hidden">
+                    <div class="flex items-center gap-4 p-4 bg-accent/10 border border-accent/20 rounded-2xl">
+                        <div class="loading-spinner"></div>
+                        <div>
+                            <h4 class="text-sm font-semibold text-accent">AI is generating...</h4>
+                            <p class="text-xs text-white/50">Crafting your professional bio and descriptions.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Pane: Live Preview -->
+            <section class="flex-1 bg-[#050508] relative">
+                <!-- Preview Toolbar -->
+                <div class="absolute top-6 left-1/2 -translate-x-1/2 bg-white/5 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full flex gap-4 text-[10px] tracking-tighter uppercase font-medium text-white/40 z-20">
+                    <span class="flex items-center gap-1.5"><i class="fas fa-desktop"></i> Responsive Preview</span>
+                    <span class="w-px h-3 bg-white/10 mt-0.5"></span>
+                    <span>Live Rendering</span>
+                </div>
+
+                <!-- Preview Container -->
+                <div id="preview-frame" class="w-full h-full overflow-y-auto custom-scrollbar p-12 pt-24 bg-[#0A0A0F]">
+                    <!-- The generated portfolio will be injected here -->
+                    <div id="preview-content" class="max-w-4xl mx-auto opacity-20 pointer-events-none select-none">
+                        <!-- Placeholder Content -->
+                        <div class="h-20 w-48 bg-white/5 rounded-lg mb-4"></div>
+                        <div class="h-12 w-full bg-white/5 rounded-lg mb-10"></div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="h-64 bg-white/5 rounded-2xl"></div>
+                            <div class="h-64 bg-white/5 rounded-2xl"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Empty State Overlay -->
+                    <div id="preview-empty" class="absolute inset-0 flex flex-col items-center justify-center text-center p-12">
+                        <div class="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center text-accent text-3xl mb-6">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <h3 class="text-2xl font-clash font-bold mb-3">AI Portfolio Ready</h3>
+                        <p class="text-white/40 max-w-sm">Complete the form on the left to see your professionally generated portfolio here in real-time.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Font Awesome for icons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- GSAP for animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
