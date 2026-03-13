@@ -67,8 +67,9 @@
   }
 
   .premium-card {
-    @apply bg-white/[0.015] border border-white/[0.04] rounded-[2.5rem] p-10 backdrop-blur-2xl transition-all duration-700 ease-[cubic-bezier(0.23, 1, 0.32, 1)] hover:bg-white/[0.03] hover:border-white/[0.08];
+    @apply bg-white/[0.015] border border-white/[0.04] rounded-[2.5rem] p-10 backdrop-blur-2xl transition-all duration-700;
     box-shadow: var(--card-shadow);
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .premium-card:hover {
@@ -244,7 +245,8 @@ header {
 }
 
 #generate-btn {
-  @apply relative overflow-hidden bg-gradient-to-br from-accent via-accent to-purple-500 text-black border-none shadow-[0_0_20px_rgba(var(--accent-rgb), 0.3)];
+  @apply relative overflow-hidden bg-gradient-to-br from-accent via-accent to-purple-500 text-black border-none;
+  box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.3);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -258,7 +260,8 @@ header {
 }
 
 #generate-btn:hover {
-  @apply scale-105 -translate-y-0.5 shadow-[0_15px_35px_rgba(var(--accent-rgb), 0.5)];
+  @apply scale-105 -translate-y-0.5;
+  box-shadow: 0 15px 35px rgba(var(--accent-rgb), 0.5);
 }
 
 #generate-btn:active {
